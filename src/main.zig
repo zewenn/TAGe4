@@ -3,6 +3,7 @@ const print = std.debug.print;
 const String = @import("./deps/zig-string.zig").String;
 
 const menus = @import("./menus.zig");
+const entities = @import("./entities.zig");
 
 const c = @cImport({
     @cInclude("stdlib.h");
@@ -17,6 +18,9 @@ pub fn main() !void {
     defer _ = gpa.deinit();
 
     var allocator = gpa.allocator();
+
+    var player = try entities.Entity.init(&allocator, "player");
+    defer player.deinit();
 
     try menu_objs.main_menu.init(&allocator);
     defer menu_objs.main_menu.deinit();

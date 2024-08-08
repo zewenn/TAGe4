@@ -52,6 +52,7 @@ pub const Menu = struct {
         return .{ .id = new_id, .title = new_title, .description = new_description, .options = new_options, .allocator = allocator };
     }
 
+    /// This WILL `deinit`alise actions contained in `self.options` too
     pub fn deinit(self: *Menu) void {
         self.id.deinit();
         self.title.deinit();
