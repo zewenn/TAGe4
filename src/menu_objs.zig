@@ -55,9 +55,12 @@ pub const main_menu = struct {
     }
 
     pub fn deinit() void {
+        // actions_objs.start.deinit();
+        // actions_objs.quit.deinit();
+        // for (menu.options.items) |act| {
+        //     act.deinit();
+        // }
         menu.deinit();
-        actions_objs.start.deinit();
-        actions_objs.quit.deinit();
     }
 
     pub fn self() *Menu {
@@ -115,8 +118,8 @@ pub const town_of_swinford_menu = struct {
 
     pub fn deinit() void {
         menu.deinit();
-        actions_objs.blacksmith.deinit();
-        actions_objs.mayor.deinit();
+        // actions_objs.blacksmith.deinit();
+        // actions_objs.mayor.deinit();
     }
 
     pub fn self() *Menu {

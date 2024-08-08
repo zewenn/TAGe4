@@ -9,7 +9,8 @@ pub const Action = struct {
     func: *const fn (*Menu) void,
 
     pub fn init(allocator: *std.mem.Allocator, name: []const u8, func: *const fn (*Menu) void) !Action {
-        const new_name = try String.init_with_contents(allocator.*, name);
+        var new_name: String = undefined;
+        new_name = try String.init_with_contents(allocator.*, name);
 
         return .{
             .name = new_name,
@@ -55,8 +56,11 @@ pub const Menu = struct {
         self.id.deinit();
         self.title.deinit();
         self.description.deinit();
+        for (self.options.items) |item| {
+            var x = @constCast(&item.name);
+            x.deinit();
+        }
         self.options.deinit();
-        // allocator.free(self);
     }
 
     pub fn render(self: *Menu) !void {
