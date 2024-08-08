@@ -3,11 +3,14 @@ const print = std.debug.print;
 const String = @import("./deps/zig-string.zig").String;
 
 const menus = @import("./menus.zig");
-const systems = @import("./systems.zig");
 
-fn test_fn() void {
-    print("Test fn", .{});
-}
+const c = @cImport({
+    @cInclude("stdlib.h");
+    @cInclude("stdio.h");
+    @cInclude("conio.h");
+});
+
+const menu_objs = @import("./menu_objs.zig");
 
 // fn update() void {
 //     print("a", .{});
@@ -19,38 +22,36 @@ pub fn main() !void {
 
     var allocator = gpa.allocator();
 
-    var my_action = try menus.Action.init(
-        &allocator,
-        "Test Action",
-        test_fn,
-    );
-    defer my_action.deinit();
+    try menu_objs.main_menu.init(&allocator);
+    defer menu_objs.main_menu.deinit();
 
-    var actions = [_]menus.Action{
-        my_action,
-    };
+    const main_menu = menu_objs.main_menu.self();
+    menus.Menu.loadNext(main_menu);
 
-    var my_menu = try menus.Menu.init(
-        &allocator,
-        "menu1",
-        "Test",
-        "Hello World!",
-        &actions,
-    );
-    defer my_menu.deinit();
-    try my_menu.render();
+    while (menus.running) {
+        print("\x1b[2J\x1b[H", .{});
+        try menus.current_menu.render();
 
-    // try systems.System.init(allocator);
-    // defer systems.System.deinit();
+        print("\n\nw - Up | s - Down | f - Interact | q - Main Menu\n", .{});
 
-    // var my_task = try systems.Task.init(allocator, "Test", &update, false);
-    // defer my_task.deinit();
+        const char: u8 = @intCast(c.getch());
 
-    // try systems.System.queue(my_task);
+        switch (char) {
+            'w' => {
+                menus.current_menu.setChoiceIndex(-1);
+            },
+            's' => {
+                menus.current_menu.setChoiceIndex(1);
+            },
+            'f' => {
+                menus.current_menu.interact();
+            },
+            'q' => {
+                menus.Menu.loadNext(main_menu);
+            },
+            else => {},
+        }
+    }
 
-    // while (true) {
-    //     try systems.System.execute();
-    // }
-
-    // print("Value: {s}", .{xy_as_u8.?});
+    print("\x1b[2J\x1b[H", .{});
 }

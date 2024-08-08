@@ -6,9 +6,9 @@ pub const Action = struct {
     const Self = @This();
 
     name: String,
-    func: *const fn () void,
+    func: *const fn (*Menu) void,
 
-    pub fn init(allocator: *std.mem.Allocator, name: []const u8, func: *const fn () void) !Action {
+    pub fn init(allocator: *std.mem.Allocator, name: []const u8, func: *const fn (*Menu) void) !Action {
         const new_name = try String.init_with_contents(allocator.*, name);
 
         return .{
@@ -22,13 +22,16 @@ pub const Action = struct {
     }
 };
 
+pub var current_menu: *Menu = undefined;
+pub var running = true;
+
 pub const Menu = struct {
     const Self = @This();
     id: String,
     title: String,
     description: String,
     allocator: *std.mem.Allocator,
-    choice_index: u8 = 0,
+    choice_index: i8 = 0,
     options: std.ArrayList(Action),
 
     pub fn init(allocator: *std.mem.Allocator, id: []const u8, title: []const u8, description: []const u8, options: []Action) !Menu {
@@ -71,5 +74,27 @@ pub const Menu = struct {
 
             print("[{c}] {s}\n", .{ selected_char, str.? });
         }
+    }
+
+    pub fn setDescription(self: *Menu, to: []const u8) !void {
+        self.description.clear();
+        try self.description.concat(to);
+    }
+
+    pub fn setChoiceIndex(self: *Menu, by: i8) void {
+        if (self.choice_index == 0 and by < 0) return;
+        if (self.choice_index == 127 and by > 0) return;
+        if (self.choice_index == self.options.items.len - 1 and by > 0) return;
+
+        self.choice_index += by;
+    }
+
+    pub fn interact(self: *Menu) void {
+        var option = self.options.items[@intCast(self.choice_index)];
+        option.func(self);
+    }
+
+    pub fn loadNext(menu: *Menu) void {
+        current_menu = menu;
     }
 };
