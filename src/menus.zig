@@ -25,6 +25,10 @@ pub const Action = struct {
 pub var current_menu: *Menu = undefined;
 pub var running = true;
 
+pub fn loadNextMenu(menu: *Menu) void {
+    current_menu = menu;
+}
+
 pub const Menu = struct {
     const Self = @This();
     id: String,
@@ -92,9 +96,5 @@ pub const Menu = struct {
     pub fn interact(self: *Menu) void {
         var option = self.options.items[@intCast(self.choice_index)];
         option.func(self);
-    }
-
-    pub fn loadNext(menu: *Menu) void {
-        current_menu = menu;
     }
 };

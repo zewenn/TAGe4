@@ -12,10 +12,6 @@ const c = @cImport({
 
 const menu_objs = @import("./menu_objs.zig");
 
-// fn update() void {
-//     print("a", .{});
-// }
-
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
@@ -25,8 +21,13 @@ pub fn main() !void {
     try menu_objs.main_menu.init(&allocator);
     defer menu_objs.main_menu.deinit();
 
+    try menu_objs.town_of_swinford_menu.init(&allocator);
+    defer menu_objs.town_of_swinford_menu.deinit();
+
     const main_menu = menu_objs.main_menu.self();
-    menus.Menu.loadNext(main_menu);
+    menus.loadNextMenu(main_menu);
+
+    // const town_of_swinford_menu = menu_objs.town_of_swinford_menu.self();
 
     while (menus.running) {
         print("\x1b[2J\x1b[H", .{});
@@ -47,7 +48,7 @@ pub fn main() !void {
                 menus.current_menu.interact();
             },
             'q' => {
-                menus.Menu.loadNext(main_menu);
+                menus.loadNextMenu(main_menu);
             },
             else => {},
         }
