@@ -5,10 +5,10 @@ const input = @import("./deps/zig-input.zig");
 const String = @import("./deps/zig-string.zig").String;
 const Vec2 = @import("./deps/vectors.zig").Vec2;
 
-const events = @import("./sys/events.zig");
+const events = @import("./sys/events.zig").events;
 const screen = @import("./sys/screen.zig").screen;
 
-var pos: Vec2 = .{.x = 30, .y = 29};
+var pos: Vec2 = .{ .x = 30, .y = 29 };
 
 pub fn testfn() void {
     screen.render(pos, "x");
@@ -28,13 +28,18 @@ pub fn main() !void {
     var last_char: u8 = 0;
 
     screen.clearScreen();
+    screen.Cursor.hide();
     while (true) {
         screen.clearBuffer();
-        // screen.clearScreen();
-        // _ = try stdout.write("\x1b[2J\x1b[H");
-        // print("\x1b[H\n", .{});
-        // try stdout.print("[DEBUG] Last char: {?}\n\n", .{last_char});
-        screen.render(.{ .x = 5, .y = 5 }, "Testmsg");
+
+        const test_print = try std.fmt.allocPrint(
+            allocator,
+            "Lmao: {d}:{d}",
+            .{ pos.x, pos.y },
+        );
+        defer allocator.free(test_print);
+
+        screen.render(.{ .x = 5, .y = 5 }, test_print);
 
         const input_char = input.getKeyDown();
         last_char = input_char;
@@ -50,4 +55,5 @@ pub fn main() !void {
         try events.call("update");
         screen.apply();
     }
+    screen.Cursor.show();
 }
