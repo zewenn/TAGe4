@@ -3,7 +3,7 @@ const print = std.debug.print;
 
 const input = @import("./deps/zig-input.zig");
 const String = @import("./deps/zig-string.zig").String;
-const Vec2 = @import("./deps/vectors.zig").Vec2;
+const Vec2 = @import("./deps/vectors.zig").Vector2D;
 
 const events = @import("./sys/events.zig").events;
 const screen = @import("./sys/screen.zig").screen;

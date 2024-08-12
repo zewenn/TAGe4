@@ -1,5 +1,5 @@
 const std = @import("std");
-const Vec2 = @import("../deps/vectors.zig").Vec2;
+const Vec2 = @import("../deps/vectors.zig").Vector2D;
 const assert = @import("./assert.zig").assert;
 
 const ScreenBuffer = [30][120]u8;
