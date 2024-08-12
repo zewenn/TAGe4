@@ -4,7 +4,7 @@ const map_fn_type = *const fn () void;
 const map_fn_struct_type = struct { func: map_fn_type };
 const map_type = std.StringHashMap(std.ArrayListAligned(map_fn_struct_type, null));
 
-const events = struct {
+pub const events = struct {
     var event_map: map_type = undefined;
     var allocator_ptr: *std.mem.Allocator = undefined;
 

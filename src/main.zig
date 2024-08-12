@@ -34,7 +34,7 @@ pub fn main() !void {
 
         const test_print = try std.fmt.allocPrint(
             allocator,
-            "Lmao: {d}:{d}",
+            "{d}:{d}",
             .{ pos.x, pos.y },
         );
         defer allocator.free(test_print);
