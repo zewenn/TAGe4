@@ -45,7 +45,8 @@ pub const Entity = struct {
 
     position: Vec2,
 
-    health: u32,
+    health: f32,
+    max_health: f32,
     damage: u32,
     armour: u32,
 
@@ -59,7 +60,8 @@ pub const Entity = struct {
             .allocator = allocator,
             .name = new_name,
             .position = Vec2.init(0, 0),
-            .health = 100,
+            .health = 20,
+            .max_health = 100,
             .armour = 0,
             .damage = 0,
             .inventory = inventory,
