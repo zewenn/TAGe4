@@ -7,11 +7,13 @@ const Vec2 = @import("./deps/vectors.zig").Vec2;
 
 const events = @import("./sys/events.zig").events;
 const screen = @import("./sys/screen.zig").screen;
+const Cell = @import("./sys/screen.zig").Cell;
+const Sprite = @import("./sys/screen.zig").Sprite;
 
 var pos: Vec2(i32) = Vec2(i32).init(30, 29);
 
 pub fn testfn() void {
-    screen.render(pos, "x");
+    screen.blitString(pos, "x");
 }
 
 pub fn main() !void {
@@ -27,20 +29,42 @@ pub fn main() !void {
 
     var last_char: u8 = 0;
 
-    screen.clearScreen();
+    screen.init();
     screen.Cursor.hide();
+
+    const sprite: *Sprite(5, 5) = @constCast(
+        &Sprite(5, 5).init([_][5]Cell{[_]Cell{
+            Cell{
+                .value = 'H',
+                .foreground = .{ .red = 240, .green = 100, .blue = 73 },
+            },
+            Cell{
+                .value = 'H',
+                .foreground = .{ .red = 228, .green = 146, .blue = 115 },
+            },
+            Cell{
+                .value = 'H',
+                .foreground = .{ .red = 219, .green = 213, .blue = 110 },
+            },
+            Cell{
+                .value = 'H',
+                .foreground = .{ .red = 59, .green = 178, .blue = 115 },
+            },
+            Cell{
+                .value = 'H',
+                .foreground = .{ .red = 117, .green = 139, .blue = 253 },
+            },
+        }} ** 5),
+    );
+
     while (true) {
         screen.clearBuffer();
 
-        const test_print = try std.fmt.allocPrint(
-            allocator,
-            "{d}:{d}",
-            .{ pos.x, pos.y },
-        );
-        defer allocator.free(test_print);
+        // screen.blit(pos, @constCast(&sprite));
+        sprite.render(pos);
 
         // screen.render(.{ .x = 5, .y = 5 }, test_print);
-        screen.render(pos, test_print);
+        // screen.blitString(pos, test_print);
 
         const input_char = input.getKeyDown();
         last_char = input_char;
@@ -56,5 +80,5 @@ pub fn main() !void {
         try events.call("update");
         screen.apply();
     }
-    screen.Cursor.show();
+    screen.deinit();
 }

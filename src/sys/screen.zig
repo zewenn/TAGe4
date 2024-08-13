@@ -2,8 +2,6 @@ const std = @import("std");
 const Vec2 = @import("../deps/vectors.zig").Vec2;
 const assert = @import("./assert.zig").assert;
 
-const ScreenBuffer = [30][120]u8;
-
 pub const Colour = struct {
     const Self = @This();
     red: u8,
@@ -21,9 +19,9 @@ pub const Colour = struct {
 
 pub const Cell = struct {
     const Self = @This();
-    value: u8,
-    foreground: Colour,
-    background: Colour,
+    value: u8 = ' ',
+    foreground: Colour = Colour{ .red = 255, .green = 255, .blue = 255 },
+    background: Colour = Colour{ .red = 0, .green = 0, .blue = 0 },
 
     pub fn eql(cell1: *Self, cell2: Self) bool {
         if (cell1.value != cell2.value) return false;
@@ -34,14 +32,110 @@ pub const Cell = struct {
     }
 };
 
-pub const screen = struct {
-    var buf1: ScreenBuffer = [_][120]u8{[_]u8{' '} ** 120} ** 30;
-    var buf2: ScreenBuffer = [_][120]u8{[_]u8{' '} ** 120} ** 30;
+pub fn Sprite(comptime width: usize, comptime height: usize) type {
+    return struct {
+        const Self = @This();
+        grid: [width][height]Cell,
 
-    const max_screen_size = Vec2(u8).init(120, 30);
+        pub fn init(sprite: [height][width]Cell) Self {
+            return .{ .grid = sprite };
+        }
+
+        pub fn render(self: *Self, at: Vec2(i32)) void {
+            screen.blit(at, width, height, self);
+        }
+
+        pub fn isInBounds(_: *Self, at: Vec2(i32)) bool {
+            var _at: *Vec2(i32) = @constCast(&at);
+            var _at_end_x: Vec2(i32) = _at.add(.{
+                .x = @intCast(width),
+                .y = 0,
+            });
+            var _at_end_y: Vec2(i32) = _at.add(.{
+                .x = 0,
+                .y = @intCast(height),
+            });
+            var _at_end_xy: Vec2(i32) = _at.add(.{
+                .x = @intCast(width),
+                .y = @intCast(height),
+            });
+
+            const res = (_at.isInBounds(
+                0,
+                screen.max_screen_size.x - 1,
+                0,
+                screen.max_screen_size.y - 1,
+            ) or
+                _at_end_x.isInBounds(
+                0,
+                screen.max_screen_size.x - 1,
+                0,
+                screen.max_screen_size.y - 1,
+            ) or
+                _at_end_y.isInBounds(
+                0,
+                screen.max_screen_size.x - 1,
+                0,
+                screen.max_screen_size.y - 1,
+            ) or
+                _at_end_xy.isInBounds(
+                0,
+                screen.max_screen_size.x - 1,
+                0,
+                screen.max_screen_size.y - 1,
+            ));
+
+            // std.debug.print("{?} - {?} => {s}\n", .{ _at, _at_end_x, if (res) "true" else "false" });
+
+            return res;
+        }
+    };
+}
+
+pub const ScreenBuffer: type = [30][120]Cell;
+// pub const ScreenBuffer: type = [30][120]u8;
+
+pub const screen = struct {
+    var original_buffer: ScreenBuffer = [_][120]Cell{[_]Cell{Cell{}} ** 120} ** 30;
+    // var buf1: ScreenBuffer = [_][120]u8{[_]u8{' '} ** 120} ** 30;
+    var buf1: ScreenBuffer = undefined;
+    var buf2: ScreenBuffer = undefined;
+
+    pub const max_screen_size = Vec2(u8).init(120, 30);
 
     pub fn print(comptime bytes: []const u8, args: anytype) void {
         std.debug.print(bytes, args);
+    }
+
+    pub fn init() void {
+        clearScreen();
+
+        Cursor.hide();
+        
+        @memcpy(&buf1, &original_buffer);
+        @memcpy(&buf2, &original_buffer);
+
+        for (0..buf1.len) |y| {
+            for (0..buf1[0].len) |x| {
+                print("\x1b[38;2;{d};{d};{d}m\x1b[48;2;{d};{d};{d}m{c}\x1b[0m", .{
+                    buf1[y][x].foreground.red,
+                    buf1[y][x].foreground.green,
+                    buf1[y][x].foreground.blue,
+                    //
+                    buf1[y][x].background.red,
+                    buf1[y][x].background.green,
+                    buf1[y][x].background.blue,
+                    //
+                    buf1[y][x].value,
+                });
+            }
+            print("\n", .{});
+        }
+    }
+
+    pub fn deinit() void {
+        Cursor.show();
+        clearScreen();
     }
 
     pub fn clearScreen() void {
@@ -56,7 +150,7 @@ pub const screen = struct {
     }
 
     pub fn clearBuffer() void {
-        buf2 = [_][120]u8{[_]u8{' '} ** 120} ** 30;
+        @memcpy(&buf2, &original_buffer);
     }
 
     pub const Cursor = struct {
@@ -77,10 +171,10 @@ pub const screen = struct {
         }
     };
 
-    pub fn render(at: Vec2(i32), content: []const u8) void {
+    pub fn blitString(at: Vec2(i32), content: []const u8) void {
         var _at: *Vec2(i32) = @constCast(&at);
 
-        if (!_at.isInBounds(0, 119, 0, 29)) {
+        if (!_at.isInBounds(0, max_screen_size.x - 1, 0, max_screen_size.x - 1)) {
             return;
         }
 
@@ -89,7 +183,32 @@ pub const screen = struct {
 
         for (0..content.len) |x| {
             if (!isOnScreen(@intCast(start_x + x), @intCast(start_y))) continue;
-            buf2[start_y][start_x + x] = content[x];
+            buf2[start_y][start_x + x].value = content[x];
+        }
+    }
+
+    pub fn blit(at: Vec2(i32), comptime w: usize, comptime h: usize, sprite: *Sprite(w, h)) void {
+        const _sprite = sprite.grid;
+
+        if (!sprite.isInBounds(at)) {
+            return;
+        }
+
+        const start_x = at.x;
+        const start_y = at.y;
+
+        for (0.._sprite.len) |dh| {
+            for (0.._sprite[0].len) |dw| {
+                const px: i32 = start_x + @as(i32, @intCast(dw));
+                const py: i32 = start_y + @as(i32, @intCast(dh));
+
+                if (!isOnScreen(px, py)) continue;
+
+                const x: usize = @intCast(px);
+                const y: usize = @intCast(py);
+
+                buf2[y][x] = _sprite[dh][dw];
+            }
         }
     }
 
@@ -98,10 +217,20 @@ pub const screen = struct {
 
         for (0..buf1.len) |y| {
             for (0..buf1[0].len) |x| {
-                if (buf1[y][x] != buf2[y][x]) {
+                if (!buf1[y][x].eql(buf2[y][x])) {
                     buf1[y][x] = buf2[y][x];
                     Cursor.move(@intCast(x), @intCast(y));
-                    print("{c}", .{buf1[y][x]});
+                    print("\x1b[38;2;{d};{d};{d}m\x1b[48;2;{d};{d};{d}m{c}\x1b[0m", .{
+                        buf1[y][x].foreground.red,
+                        buf1[y][x].foreground.green,
+                        buf1[y][x].foreground.blue,
+                        //
+                        buf1[y][x].background.red,
+                        buf1[y][x].background.green,
+                        buf1[y][x].background.blue,
+                        //
+                        buf1[y][x].value,
+                    });
                 }
             }
         }

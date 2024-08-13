@@ -39,8 +39,8 @@ pub fn Vec2(comptime T: type) type {
             };
         }
 
-        pub fn round(self: *Self) Vec2(i32) {
-            return Vec2(i32).init(@intFromFloat(@round(self.x)), @intFromFloat(@round(self.y)));
+        pub fn round(K: type, self: *Self) Vec2(K) {
+            return Vec2(K).init(@intFromFloat(@round(self.x)), @intFromFloat(@round(self.y)));
         }
 
         pub fn isInBounds(self: *Self, x_start: T, x_end: T, y_start: T, y_end: T) bool {
@@ -48,6 +48,18 @@ pub fn Vec2(comptime T: type) type {
                 return false;
             }
             return true;
+        }
+
+        pub fn add(self: *Self, other: Self) Self {
+            return .{
+                .x = self.x + other.x,
+                .y = self.y + other.y,
+            };
+        }
+
+        pub fn assureUnsigned(self: *Self) void {
+            if (self.x < 0) self.x = 0;
+            if (self.y < 0) self.y = 0;
         }
     };
 }
