@@ -3,12 +3,12 @@ const print = std.debug.print;
 
 const input = @import("./deps/zig-input.zig");
 const String = @import("./deps/zig-string.zig").String;
-const Vec2 = @import("./deps/vectors.zig").Vector2D;
+const Vec2 = @import("./deps/vectors.zig").Vec2;
 
 const events = @import("./sys/events.zig").events;
 const screen = @import("./sys/screen.zig").screen;
 
-var pos: Vec2 = .{ .x = 30, .y = 29 };
+var pos: Vec2(i32) = Vec2(i32).init(30, 29);
 
 pub fn testfn() void {
     screen.render(pos, "x");
@@ -23,7 +23,7 @@ pub fn main() !void {
     events.init(&allocator);
     defer events.deinit();
 
-    try events.on("update", testfn);
+    // try events.on("update", testfn);
 
     var last_char: u8 = 0;
 
@@ -39,7 +39,8 @@ pub fn main() !void {
         );
         defer allocator.free(test_print);
 
-        screen.render(.{ .x = 5, .y = 5 }, test_print);
+        // screen.render(.{ .x = 5, .y = 5 }, test_print);
+        screen.render(pos, test_print);
 
         const input_char = input.getKeyDown();
         last_char = input_char;

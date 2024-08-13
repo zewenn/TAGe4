@@ -1,14 +1,44 @@
 const std = @import("std");
-const Vec2 = @import("../deps/vectors.zig").Vector2D;
+const Vec2 = @import("../deps/vectors.zig").Vec2;
 const assert = @import("./assert.zig").assert;
 
 const ScreenBuffer = [30][120]u8;
+
+pub const Colour = struct {
+    const Self = @This();
+    red: u8,
+    green: u8,
+    blue: u8,
+
+    pub fn eql(col1: *Self, col2: Self) bool {
+        if (col1.red != col2.red) return false;
+        if (col1.green != col2.green) return false;
+        if (col1.blue != col2.blue) return false;
+
+        return true;
+    }
+};
+
+pub const Cell = struct {
+    const Self = @This();
+    value: u8,
+    foreground: Colour,
+    background: Colour,
+
+    pub fn eql(cell1: *Self, cell2: Self) bool {
+        if (cell1.value != cell2.value) return false;
+        if (!cell1.foreground.eql(cell2.foreground)) return false;
+        if (!cell1.background.eql(cell2.background)) return false;
+
+        return true;
+    }
+};
 
 pub const screen = struct {
     var buf1: ScreenBuffer = [_][120]u8{[_]u8{' '} ** 120} ** 30;
     var buf2: ScreenBuffer = [_][120]u8{[_]u8{' '} ** 120} ** 30;
 
-    const max_screen_size: Vec2 = .{ .x = 120, .y = 30 };
+    const max_screen_size = Vec2(u8).init(120, 30);
 
     pub fn print(comptime bytes: []const u8, args: anytype) void {
         std.debug.print(bytes, args);
@@ -47,7 +77,13 @@ pub const screen = struct {
         }
     };
 
-    pub fn render(at: Vec2, content: []const u8) void {
+    pub fn render(at: Vec2(i32), content: []const u8) void {
+        var _at: *Vec2(i32) = @constCast(&at);
+
+        if (!_at.isInBounds(0, 119, 0, 29)) {
+            return;
+        }
+
         const start_x: usize = @intCast(at.x);
         const start_y: usize = @intCast(at.y);
 
