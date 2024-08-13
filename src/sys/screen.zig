@@ -101,14 +101,16 @@ pub const screen = struct {
     var buf1: ScreenBuffer = undefined;
     var buf2: ScreenBuffer = undefined;
 
-    pub const max_screen_size = Vec2(u8).init(120, 30);
+    pub var max_screen_size = Vec2(u8).init(120, 30);
 
     pub fn print(comptime bytes: []const u8, args: anytype) void {
         std.debug.print(bytes, args);
     }
 
-    pub fn init() void {
+    pub fn init(comptime screen_size: Vec2(u8)) void {
         clearScreen();
+
+        max_screen_size = screen_size;
 
         Cursor.hide();
         

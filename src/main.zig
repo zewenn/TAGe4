@@ -29,32 +29,32 @@ pub fn main() !void {
 
     var last_char: u8 = 0;
 
-    screen.init();
+    screen.init(.{ .x = 120, .y = 30 });
     screen.Cursor.hide();
 
     const sprite: *Sprite(5, 5) = @constCast(
-        &Sprite(5, 5).init([_][5]Cell{[_]Cell{
-            Cell{
-                .value = 'H',
+        &Sprite(5, 5).init([_][5]Cell{
+            [_]Cell{Cell{
+                .value = '#',
                 .foreground = .{ .red = 240, .green = 100, .blue = 73 },
-            },
-            Cell{
-                .value = 'H',
+            }} ** 5,
+            [_]Cell{Cell{
+                .value = '#',
                 .foreground = .{ .red = 228, .green = 146, .blue = 115 },
-            },
-            Cell{
-                .value = 'H',
+            }} ** 5,
+            [_]Cell{Cell{
+                .value = '#',
                 .foreground = .{ .red = 219, .green = 213, .blue = 110 },
-            },
-            Cell{
-                .value = 'H',
+            }} ** 5,
+            [_]Cell{Cell{
+                .value = '#',
                 .foreground = .{ .red = 59, .green = 178, .blue = 115 },
-            },
-            Cell{
-                .value = 'H',
+            }} ** 5,
+            [_]Cell{Cell{
+                .value = '#',
                 .foreground = .{ .red = 117, .green = 139, .blue = 253 },
-            },
-        }} ** 5),
+            }} ** 5,
+        }),
     );
 
     while (true) {
