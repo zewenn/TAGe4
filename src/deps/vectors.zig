@@ -50,6 +50,11 @@ pub fn Vec2(comptime T: type) type {
             return true;
         }
 
+        pub fn assureUnsigned(self: *Self) void {
+            if (self.x < 0) self.x = 0;
+            if (self.y < 0) self.y = 0;
+        }
+
         pub fn add(self: *Self, other: Self) Self {
             return .{
                 .x = self.x + other.x,
@@ -58,18 +63,15 @@ pub fn Vec2(comptime T: type) type {
         }
 
         pub fn sub(self: *Self, other: Self) Self {
-            return .{
-                .x = self.x - other.x,
-                .y = self.y - other.y
-            };
+            return .{ .x = self.x - other.x, .y = self.y - other.y };
         }
 
         pub fn mult(self: *Self, by: T) Self {
             return .{
                 .x = self.x * by,
                 .y = self.y * by,
-            };            
-        } 
+            };
+        }
 
         pub fn div(self: *Self, by: T) Self {
             return .{
@@ -86,13 +88,12 @@ pub fn Vec2(comptime T: type) type {
             return self_a.x * other_a.x + self_a.y * other_a.y;
         }
 
-        pub fn assureUnsigned(self: *Self) void {
-            if (self.x < 0) self.x = 0;
-            if (self.y < 0) self.y = 0;
+        pub fn magnitude(self: *Self) i32 {
+            return @intCast(std.math.sqrt((self.x * self.x) + (self.x * self.x)));
         }
 
-        pub fn magnitude(self: *Self) T {
-            return @intCast(std.math.sqrt((self.x * self.x) + (self.x * self.x)));
+        pub fn direction(self: *Self) i32 {
+            return @floatCast(std.math.radiansToDegrees(std.math.atan2(self.y, self.x)));
         }
 
         pub fn normalise(self: *Self) Self {
