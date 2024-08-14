@@ -1,7 +1,7 @@
 const std = @import("std");
 const print = std.debug.print;
 
-const input = @import("./deps/zig-input.zig");
+// const input = @import("./deps/zig-input.zig");
 const String = @import("./deps/zig-string.zig").String;
 const Vec2 = @import("./deps/vectors.zig").Vec2;
 
@@ -10,7 +10,7 @@ const screen = @import("./sys/screen.zig").screen;
 const Cell = @import("./sys/screen.zig").Cell;
 const Sprite = @import("./sys/screen.zig").Sprite;
 
-var pos: Vec2(i32) = Vec2(i32).init(30, 29);
+var pos: Vec2(i32) = Vec2(i32).init(30, 5);
 
 pub fn testfn() void {
     screen.blitString(pos, "x");
@@ -27,7 +27,7 @@ pub fn main() !void {
 
     // try events.on("update", testfn);
 
-    var last_char: u8 = 0;
+    // var last_char: u8 = 0;
 
     screen.init(.{ .x = 120, .y = 30 });
     screen.Cursor.hide();
@@ -66,17 +66,17 @@ pub fn main() !void {
         // screen.render(.{ .x = 5, .y = 5 }, test_print);
         // screen.blitString(pos, test_print);
 
-        const input_char = input.getKeyDown();
-        last_char = input_char;
+        // const input_char = input.getKeyDown();
+        // last_char = input_char;
 
-        switch (input_char) {
-            input.keys.ESCAPE => break,
-            input.keys.a => pos.x -= 1,
-            input.keys.d => pos.x += 1,
-            input.keys.w => pos.y -= 1,
-            input.keys.s => pos.y += 1,
-            else => {},
-        }
+        // switch (input_char) {
+        //     input.keys.ESCAPE => break,
+        //     input.keys.a => pos.x -= 1,
+        //     input.keys.d => pos.x += 1,
+        //     input.keys.w => pos.y -= 1,
+        //     input.keys.s => pos.y += 1,
+        //     else => {},
+        // }
         try events.call("update");
         screen.apply();
     }
