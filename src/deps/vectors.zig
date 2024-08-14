@@ -57,6 +57,27 @@ pub fn Vec2(comptime T: type) type {
             };
         }
 
+        pub fn sub(self: *Self, other: Self) Self {
+            return .{
+                .x = self.x - other.x,
+                .y = self.y - other.y
+            };
+        }
+
+        pub fn mult(self: *Self, by: T) Self {
+            return .{
+                .x = self.x * by,
+                .y = self.y * by,
+            };            
+        } 
+
+        pub fn div(self: *Self, by: T) Self {
+            return .{
+                .x = @intCast(self.x / by),
+                .y = @intCast(self.y / by),
+            };
+        }
+
         pub fn assureUnsigned(self: *Self) void {
             if (self.x < 0) self.x = 0;
             if (self.y < 0) self.y = 0;
