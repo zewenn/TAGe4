@@ -78,9 +78,31 @@ pub fn Vec2(comptime T: type) type {
             };
         }
 
+        pub fn dot_prod(self: *Self, other: Self) T {
+            const displacement = self.sub(other);
+            const self_a = self.sub(displacement);
+            const other_a = other.sub(displacement);
+
+            return self_a.x * other_a.x + self_a.y * other_a.y;
+        }
+
         pub fn assureUnsigned(self: *Self) void {
             if (self.x < 0) self.x = 0;
             if (self.y < 0) self.y = 0;
+        }
+
+        pub fn magnitude(self: *Self) T {
+            return @intCast(std.math.sqrt((self.x * self.x) + (self.x * self.x)));
+        }
+
+        pub fn normalise(self: *Self) Self {
+            const mag = self.magnitude();
+
+            if (mag == 0) {
+                return Self.init(0, 0);
+            }
+
+            return self.div(mag);
         }
     };
 }

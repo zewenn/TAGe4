@@ -10,7 +10,7 @@ const screen = @import("./sys/screen.zig").screen;
 const Cell = @import("./sys/screen.zig").Cell;
 const Sprite = @import("./sys/screen.zig").Sprite;
 
-var pos: Vec2(i32) = Vec2(i32).init(30, 5);
+var pos: Vec2(i32) = Vec2(i32).init(0, 5);
 
 pub fn testfn() void {
     screen.blitString(pos, "x");
@@ -57,10 +57,23 @@ pub fn main() !void {
         }),
     );
 
+    var tempx: f32 = 0;
+
     while (true) {
         screen.clearBuffer();
 
         // screen.blit(pos, @constCast(&sprite));
+
+        // if (tempx < 119.0) 
+            tempx += 0.001;
+        // print("{d}-{d}\n", .{tempx, )});
+
+        if (@rem(tempx, 10) > 8) {
+            // print("{d}", .{tempx});
+            tempx = 0;
+            pos.x += 1;
+        }
+
         sprite.render(pos);
 
         // screen.render(.{ .x = 5, .y = 5 }, test_print);
