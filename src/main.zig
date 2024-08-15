@@ -1,103 +1,61 @@
 const std = @import("std");
-const print = std.debug.print;
-
-// const input = @import("./deps/zig-input.zig");
-const String = @import("./deps/zig-string.zig").String;
-const Vec2 = @import("./deps/vectors.zig").Vec2;
-
-const events = @import("./sys/events.zig").events;
-const screen = @import("./sys/screen.zig").screen;
-const Cell = @import("./sys/screen.zig").Cell;
-const Sprite = @import("./sys/screen.zig").Sprite;
-
-var pos: Vec2(i32) = Vec2(i32).init(0, 5);
-
 const sdl = @import("zsdl2");
-pub fn testfn() void {
-    screen.blitString(pos, "x");
-}
+const zopengl = @import("zopengl");
 
 pub fn main() !void {
-    try sdl.init(.{ .events = true });
+    _ = sdl.setHint(sdl.hint_windows_dpi_awareness, "system");
+
+    try sdl.init(.{ .audio = true, .video = true });
     defer sdl.quit();
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    const gl_major = 3;
+    const gl_minor = 3;
+    try sdl.gl.setAttribute(.context_profile_mask, @intFromEnum(sdl.gl.Profile.core));
+    try sdl.gl.setAttribute(.context_major_version, gl_major);
+    try sdl.gl.setAttribute(.context_minor_version, gl_minor);
+    try sdl.gl.setAttribute(.context_flags, @as(i32, @bitCast(sdl.gl.ContextFlags{ .forward_compatible = true })));
 
-    var allocator = gpa.allocator();
-
-    events.init(&allocator);
-    defer events.deinit();
-
-    // try events.on("update", testfn);
-    // var last_char: u8 = 0;
-
-    screen.init(.{ .x = 120, .y = 30 });
-    screen.Cursor.hide();
-
-    const sprite: *Sprite(5, 5) = @constCast(
-        &Sprite(5, 5).init([_][5]Cell{
-            [_]Cell{Cell{
-                .value = '#',
-                .foreground = .{ .red = 240, .green = 100, .blue = 73 },
-            }} ** 5,
-            [_]Cell{Cell{
-                .value = '#',
-                .foreground = .{ .red = 228, .green = 146, .blue = 115 },
-            }} ** 5,
-            [_]Cell{Cell{
-                .value = '#',
-                .foreground = .{ .red = 219, .green = 213, .blue = 110 },
-            }} ** 5,
-            [_]Cell{Cell{
-                .value = '#',
-                .foreground = .{ .red = 59, .green = 178, .blue = 115 },
-            }} ** 5,
-            [_]Cell{Cell{
-                .value = '#',
-                .foreground = .{ .red = 117, .green = 139, .blue = 253 },
-            }} ** 5,
-        }),
+    const window = try sdl.Window.create(
+        "zig-gamedev: minimal_sdl_gl",
+        sdl.Window.pos_undefined,
+        sdl.Window.pos_undefined,
+        1280,
+        720,
+        .{ .opengl = true, .allow_highdpi = true },
     );
+    defer window.destroy();
 
-    // var tempx: f32 = 0;
+    const gl_context = try sdl.gl.createContext(window);
+    defer sdl.gl.deleteContext(gl_context);
 
-    while (true) {
-        screen.clearBuffer();
+    try sdl.gl.makeCurrent(window, gl_context);
+    try sdl.gl.setSwapInterval(0);
 
-        // screen.blit(pos, @constCast(&sprite));
+    try zopengl.loadCoreProfile(sdl.gl.getProcAddress, gl_major, gl_minor);
 
-        // if (tempx < 119.0)
-        // tempx += 0.001;
-        // print("{d}-{d}\n", .{tempx, )});
+    const gl = zopengl.bindings;
 
-        // if (@rem(tempx, 10) > 8) {
-        //     // print("{d}", .{tempx});
-        //     tempx = 0;
-        //     pos.x += 1;
-        // }
+    {
+        var w: i32 = undefined;
+        var h: i32 = undefined;
 
+        try window.getSize(&w, &h);
+        std.debug.print("Window size is {d}x{d}\n", .{ w, h });
+
+        sdl.gl.getDrawableSize(window, &w, &h);
+        std.debug.print("Drawable size is {d}x{d}\n", .{ w, h });
+    }
+
+    main_loop: while (true) {
         var event: sdl.Event = undefined;
         while (sdl.pollEvent(&event)) {
-            print("xxxx - {any}\n", .{event});
-            switch (event.type) {
-                .keydown => {
-                    switch (event.key.keysym.sym) {
-                        .w => pos.y -= 1,
-                        .s => pos.y += 1,
-                        .a => pos.x -= 1,
-                        .d => pos.x += 1,
-                        else => {}
-                    }
-                },
-                else => {}
+            if (event.type == .quit) {
+                break :main_loop;
+            } else if (event.type == .keydown) {
+                if (event.key.keysym.sym == .escape) break :main_loop;
             }
         }
-        
-        sprite.render(pos);
-
-        try events.call("update");
-        screen.apply();
+        gl.clearBufferfv(gl.COLOR, 0, &[_]f32{ 0.2, 0.4, 0.8, 1.0 });
+        sdl.gl.swapWindow(window);
     }
-    screen.deinit();
 }

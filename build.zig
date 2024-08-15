@@ -52,6 +52,10 @@ pub fn build(b: *std.Build) void {
         b.getInstallStep().dependOn(install_sdl2_step);
     }
 
+
+    const zopengl = b.dependency("zopengl", .{});
+    exe.root_module.addImport("zopengl", zopengl.module("root"));
+
     exe.linkLibC();
 
     // const string = b.dependency("string", .{
