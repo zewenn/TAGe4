@@ -15,22 +15,22 @@ pub fn build(b: *std.Build) void {
     // set a preferred release mode, allowing the user to decide how to optimize.
     const optimize = b.standardOptimizeOption(.{});
 
-    const lib = b.addStaticLibrary(.{
-        .name = "tag4",
-        // In this case the main source file is merely a path, however, in more
-        // complicated build scripts, this could be a generated file.
-        .root_source_file = b.path("src/main.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
+    // const lib = b.addStaticLibrary(.{
+    //     .name = "tag4",
+    //     // In this case the main source file is merely a path, however, in more
+    //     // complicated build scripts, this could be a generated file.
+    //     .root_source_file = b.path("src/main.zig"),
+    //     .target = target,
+    //     .optimize = optimize,
+    // });
 
-    lib.linkSystemLibrary("c");
-    lib.linkLibC();
+    // lib.linkSystemLibrary("c");
+    // lib.linkLibC();
 
-    // This declares intent for the library to be installed into the standard
-    // location when the user invokes the "install" step (the default step when
-    // running `zig build`).
-    b.installArtifact(lib);
+    // // This declares intent for the library to be installed into the standard
+    // // location when the user invokes the "install" step (the default step when
+    // // running `zig build`).
+    // b.installArtifact(lib);
 
     const exe = b.addExecutable(.{
         .name = "tag4",
@@ -38,6 +38,19 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
+
+    const zsdl = b.dependency("zsdl", .{});
+    exe.root_module.addImport("zsdl2", zsdl.module("zsdl2"));
+
+    @import("zsdl").link_SDL2(exe);
+
+    const sdl2_libs_path = b.dependency("sdl2-prebuilt", .{}).path("").getPath(b);
+    @import("zsdl").addLibraryPathsTo(sdl2_libs_path, exe);
+    @import("zsdl").addRPathsTo(sdl2_libs_path, exe);
+
+    if (@import("zsdl").install_SDL2(b, target.result, sdl2_libs_path, .bin)) |install_sdl2_step| {
+        b.getInstallStep().dependOn(install_sdl2_step);
+    }
 
     exe.linkLibC();
 

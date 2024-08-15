@@ -12,11 +12,15 @@ const Sprite = @import("./sys/screen.zig").Sprite;
 
 var pos: Vec2(i32) = Vec2(i32).init(0, 5);
 
+const sdl = @import("zsdl2");
 pub fn testfn() void {
     screen.blitString(pos, "x");
 }
 
 pub fn main() !void {
+    try sdl.init(.{ .events = true });
+    defer sdl.quit();
+
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
 
@@ -26,7 +30,6 @@ pub fn main() !void {
     defer events.deinit();
 
     // try events.on("update", testfn);
-
     // var last_char: u8 = 0;
 
     screen.init(.{ .x = 120, .y = 30 });
@@ -57,39 +60,42 @@ pub fn main() !void {
         }),
     );
 
-    var tempx: f32 = 0;
+    // var tempx: f32 = 0;
 
     while (true) {
         screen.clearBuffer();
 
         // screen.blit(pos, @constCast(&sprite));
 
-        // if (tempx < 119.0) 
-            tempx += 0.001;
+        // if (tempx < 119.0)
+        // tempx += 0.001;
         // print("{d}-{d}\n", .{tempx, )});
 
-        if (@rem(tempx, 10) > 8) {
-            // print("{d}", .{tempx});
-            tempx = 0;
-            pos.x += 1;
-        }
+        // if (@rem(tempx, 10) > 8) {
+        //     // print("{d}", .{tempx});
+        //     tempx = 0;
+        //     pos.x += 1;
+        // }
 
+        var event: sdl.Event = undefined;
+        while (sdl.pollEvent(&event)) {
+            print("xxxx - {any}\n", .{event});
+            switch (event.type) {
+                .keydown => {
+                    switch (event.key.keysym.sym) {
+                        .w => pos.y -= 1,
+                        .s => pos.y += 1,
+                        .a => pos.x -= 1,
+                        .d => pos.x += 1,
+                        else => {}
+                    }
+                },
+                else => {}
+            }
+        }
+        
         sprite.render(pos);
 
-        // screen.render(.{ .x = 5, .y = 5 }, test_print);
-        // screen.blitString(pos, test_print);
-
-        // const input_char = input.getKeyDown();
-        // last_char = input_char;
-
-        // switch (input_char) {
-        //     input.keys.ESCAPE => break,
-        //     input.keys.a => pos.x -= 1,
-        //     input.keys.d => pos.x += 1,
-        //     input.keys.w => pos.y -= 1,
-        //     input.keys.s => pos.y += 1,
-        //     else => {},
-        // }
         try events.call("update");
         screen.apply();
     }
