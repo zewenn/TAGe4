@@ -1,9 +1,20 @@
 const std = @import("std");
 const sdl = @import("zsdl2");
 const zopengl = @import("zopengl");
+const zstbi = @import("zstbi");
+
+const Allocator = std.mem.Allocator;
 
 pub fn main() !void {
+    const gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer gpa.deinit();
+    var allocator: Allocator = undefined;
+    allocator = gpa.allocator();
+
     _ = sdl.setHint(sdl.hint_windows_dpi_awareness, "system");
+
+    try zstbi.init(allocator);
+    defer zstbi.deinit();
 
     try sdl.init(.{ .audio = true, .video = true });
     defer sdl.quit();
