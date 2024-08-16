@@ -6,14 +6,15 @@ const zstbi = @import("zstbi");
 const Allocator = std.mem.Allocator;
 
 pub fn main() !void {
-    const gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer gpa.deinit();
-    var allocator: Allocator = undefined;
-    allocator = gpa.allocator();
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+
+    var allocator_ptr: *Allocator = undefined;
+    allocator_ptr = @constCast(&gpa.allocator());
 
     _ = sdl.setHint(sdl.hint_windows_dpi_awareness, "system");
 
-    try zstbi.init(allocator);
+    zstbi.init(allocator_ptr.*);
     defer zstbi.deinit();
 
     try sdl.init(.{ .audio = true, .video = true });
