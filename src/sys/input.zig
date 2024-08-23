@@ -78,6 +78,7 @@ pub const OsXInputter = struct {
     }
 
     fn _update() void {
+        @memcpy(_keymap2, _keymap);
         _ = c.CFRunLoopRunInMode(c.kCFRunLoopDefaultMode, 0.01, c.TRUE);
         _ = c.getch();
     }
@@ -97,12 +98,12 @@ pub const OsXInputter = struct {
     }
 
     fn _gKeyDown(k: u8) bool {
-        if (_keymap[k]) return false;
+        if (_keymap2[k]) return false;
         return _getKey(k);
     }
 
     fn _gKeyUp(k: u8) bool {
-        if (!_keymap[k]) return false;
+        if (!_keymap2[k]) return false;
         return !_getKey(k);
     }
 
@@ -146,31 +147,30 @@ pub const OsXKeyCodes = struct {
 	pub const X = 27;
 	pub const Y = 28;
 	pub const Z = 29;
-	pub const @"!" = 30;
-	pub const @"@" = 31;
-	pub const @"#" = 32;
-	pub const @"$" = 33;
-	pub const @"%" = 34;
-	pub const @"^" = 35;
-	pub const @"&" = 36;
-	pub const @"*" = 37;
-	pub const @"(" = 38;
-	pub const @")" = 39;
+	pub const @"1" = 30;
+	pub const @"2" = 31;
+	pub const @"3" = 32;
+	pub const @"4" = 33;
+	pub const @"5" = 34;
+	pub const @"6" = 35;
+	pub const @"7" = 36;
+	pub const @"8" = 37;
+	pub const @"9" = 38;
+	pub const @"0" = 39;
 	pub const ESCAPE = 41;
 	pub const @"DELETE|BACKSPACE" = 42;
 	pub const TAB = 43;
 	pub const @" " = 44;
-	pub const @"_" = 45;
-	pub const @"+" = 46;
-	pub const @"{" = 47;
-	pub const @"}" = 48;
-	pub const @"|" = 49;
-	pub const @":" = 51;
-	pub const @"\"" = 52;
-	pub const @"~" = 53;
-	pub const @"<" = 54;
-	pub const @">" = 55;
-	pub const @"?" = 56;
+	pub const @"-" = 45;
+	pub const @"=" = 46;
+	pub const @"[" = 47;
+	pub const @"]" = 48;
+	pub const @";" = 51;
+	pub const @"'" = 52;
+	pub const @"`" = 53;
+	pub const @"," = 54;
+	pub const @"." = 55;
+	pub const @"/" = 56;
 	pub const CAPSLOCK = 57;
 	pub const @"F1" = 58;
 	pub const @"F2" = 59;
@@ -197,12 +197,10 @@ pub const OsXKeyCodes = struct {
 	pub const LEFTARROW = 80;
 	pub const DOWNARROW = 81;
 	pub const UPARROW = 82;
-	pub const CLEAR = 83;
-	pub const @"/" = 84;
-	pub const @"-" = 86;
+	pub const NUMLOCK = 83;
+	pub const @"*" = 85;
+	pub const @"+" = 87;
 	pub const ENTER = 88;
-	pub const @"5" = 93;
-	pub const DELETE = 99;
 	pub const LC = 224;
 	pub const LS = 225;
 	pub const LA = 226;
@@ -212,7 +210,6 @@ pub const OsXKeyCodes = struct {
 	pub const RA = 230;
 	pub const RCMD = 231;
 };
-
 
 pub const input = struct {
     const c = @cImport({

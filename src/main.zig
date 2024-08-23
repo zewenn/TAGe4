@@ -90,6 +90,10 @@ pub fn main() !void {
         if (Input.getKey(osx_keys.S)) {
             pos.y += 1;
         }
+
+        if (Input.getKey(osx_keys.ESCAPE)) {
+            break;
+        }
         
 
         // screen.clearScreen();
