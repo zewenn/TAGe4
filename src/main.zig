@@ -6,12 +6,13 @@ const String = @import("./deps/zig-string.zig").String;
 const Vec2 = @import("./deps/vectors.zig").Vec2;
 
 const events = @import("./sys/events.zig").events;
+
 const screen = @import("./sys/screen.zig").screen;
 const Cell = @import("./sys/screen.zig").Cell;
 const Sprite = @import("./sys/screen.zig").Sprite;
-// const input = @import("./sys/input.zig").input;
-const osx_inpt = @import("./sys/input.zig").OsXInputter;
-const osx_keys = @import("./sys/input.zig").OsXKeyCodes;
+
+const getInputter = @import("./sys/input.zig").getInputter;
+const getKeyCodes = @import("./sys/input.zig").getKeyCodes;
 
 var pos: Vec2(i32) = Vec2(i32).init(0, 5);
 var rnd = std.Random.DefaultPrng.init(100);
@@ -28,17 +29,20 @@ pub fn main() !void {
 
     var allocator = gpa.allocator();
 
-    // input.init(&allocator);
-    // defer input.deinit();
-    const Input = osx_inpt.get();
-    Input.init(&allocator);
-    defer Input.deinit();
+    const KeyCodes = getKeyCodes() catch {
+        std.debug.print("The KeyCodes for this OS are not available, yet!", .{});
+        return;
+    };
+    const Inputter = getInputter() catch {
+        std.debug.print("The Inputter for this OS is not supported, yet!", .{});
+        return;
+    };
+    Inputter.init(&allocator);
+    defer Inputter.deinit();
 
     events.init(&allocator);
     defer events.deinit();
 
-    // try events.on("update", testfn);
-    // var last_char: u8 = 0;
 
     screen.init(.{ .x = 120, .y = 30 });
     defer screen.deinit();
@@ -68,48 +72,30 @@ pub fn main() !void {
             }} ** 5,
         }),
     );
-    // _ = sprite;
-
-    // var tempx: f32 = 0;
 
     try events.on("update", testfn);
 
     while (true) {
-        Input.update();
+        Inputter.update();
         screen.clearBuffer();
 
-        if (Input.getKey(osx_keys.A)) {
+        if (Inputter.getKey(KeyCodes.A)) {
             pos.x -= 1;
         }
-        if (Input.getKey(osx_keys.D)) {
+        if (Inputter.getKey(KeyCodes.D)) {
             pos.x += 1;
         }
-        if (Input.getKey(osx_keys.W)) {
+        if (Inputter.getKey(KeyCodes.W)) {
             pos.y -= 1;
         }
-        if (Input.getKey(osx_keys.S)) {
+        if (Inputter.getKey(KeyCodes.S)) {
             pos.y += 1;
         }
 
-        if (Input.getKey(osx_keys.ESCAPE)) {
+        if (Inputter.getKey(KeyCodes.ESCAPE)) {
             break;
         }
         
-
-        // screen.clearScreen();
-        // std.debug.print("{any}\n\n", .{sdl.getKeyboardState()});
-
-        // // screen.blit(pos, @constCast(&sprite));
-
-        // if (tempx < 119.0)
-        // tempx += 0.001;
-        // // print("{d}-{d}\n", .{tempx, )});
-
-        // if (@rem(tempx, 10) > 8) {
-        //     // print("{d}", .{tempx});
-        //     tempx = 0;
-        //     pos.x += 1;
-        // }
 
         sprite.render(pos);
 

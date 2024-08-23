@@ -14,13 +14,9 @@ const Inputter = struct {
 
 pub const OsXInputter = struct {
     pub const c = @cImport({
-        // @cInclude("ApplicationServices/ApplicationServices.h");
-        // // @cInclude("IOKit/hidsystem/ev_keymap.h");
-        // @cInclude("Carbon/Carbon.h");
         @cInclude("IOKit/hid/IOHIDManager.h");
         @cInclude("CoreFoundation/CoreFoundation.h");
         @cInclude("ncurses.h");
-        // @cInclude("unistd.h");
     });
 
     var _keymap: []bool = undefined;
@@ -211,7 +207,26 @@ pub const OsXKeyCodes = struct {
 	pub const RCMD = 231;
 };
 
-pub const input = struct {
+const OSNotSupportedError = error{OSNotSupported};
+pub inline fn getInputter() OSNotSupportedError!Inputter {
+    return switch (@import("builtin").target.os.tag) {
+        .windows => OSNotSupportedError,
+        .macos => OsXInputter.get(),
+        .linux => OSNotSupportedError,
+        else => OSNotSupportedError
+    };
+}
+
+// TODO: Make an interface for keycodes!!!
+pub inline fn getKeyCodes() OSNotSupportedError!type {
+    return switch (@import("builtin").target.os.tag) {
+        .macos => OsXKeyCodes,
+        else => OSNotSupportedError
+    };
+}
+
+/// **DEPRECATED**: This does not use the `Inputter` interface!
+pub const NCursesInputter = struct {
     const c = @cImport({
         @cInclude("ncurses.h");
     });
