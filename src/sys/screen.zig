@@ -102,11 +102,12 @@ pub const screen = struct {
     var buf2: ScreenBuffer = undefined;
 
     var stdOut: std.fs.File = undefined;
+    var writer: std.fs.File.Writer = undefined;
 
     pub var max_screen_size = Vec2(u8).init(120, 30);
 
     pub fn print(comptime bytes: []const u8, args: anytype) void {
-        stdOut.writer().print(bytes, args) catch return;
+        writer.print(bytes, args) catch return;
     }
 
     pub fn init(comptime screen_size: Vec2(u8)) void {
@@ -116,6 +117,7 @@ pub const screen = struct {
 
         Cursor.hide();
         stdOut = std.io.getStdOut();
+        writer = stdOut.writer();
 
         @memcpy(&buf1, &original_buffer);
         @memcpy(&buf2, &original_buffer);

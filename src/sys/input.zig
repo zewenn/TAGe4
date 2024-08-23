@@ -129,6 +129,8 @@ pub const WindowsInputter = struct {
     fn _init(allocator: *Allocator) void {
         alloc = allocator;
 
+        
+
         keymap_buffer = alloc.alloc(bool, std.math.maxInt(u8)) catch unreachable;
         keymap_buffer_last_frame = alloc.alloc(bool, std.math.maxInt(u8)) catch unreachable;
 
