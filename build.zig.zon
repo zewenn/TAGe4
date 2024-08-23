@@ -15,11 +15,11 @@
     // Once all dependencies are fetched, `zig build` no longer requires
     // internet connectivity.
     .dependencies = .{
-         .zsdl = .{ .path = "./src/deps/zsdl" },
-         .@"sdl2-prebuilt" = .{
-            .url = "https://github.com/zig-gamedev/SDL2-prebuilt/archive/49b2267a0fedee9d594733617255dd979da51813.tar.gz",
-            .hash = "1220930ce0d568bd606112d38c3f16a38841a5fd9de5c224f627cd953e7febb90bfa",
-        },
+        //  .zsdl = .{ .path = "./src/deps/zsdl" },
+        //  .@"sdl2-prebuilt" = .{
+        //     .url = "https://github.com/zig-gamedev/SDL2-prebuilt/archive/49b2267a0fedee9d594733617255dd979da51813.tar.gz",
+        //     .hash = "1220930ce0d568bd606112d38c3f16a38841a5fd9de5c224f627cd953e7febb90bfa",
+        // },
         // .sdl = .{
         //     .url = "https://github.com/andrewrk/SDL/archive/3eb87f0f5b8d815d5a608b732e1d77f0876712d9.tar.gz",
         //     .hash = "122006f1d25dd112605ad00929f05e05da844decd4bc25996998814704344be87a09",

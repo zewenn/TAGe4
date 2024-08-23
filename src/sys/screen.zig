@@ -1,6 +1,6 @@
 const std = @import("std");
 const Vec2 = @import("../deps/vectors.zig").Vec2;
-const assert = @import("./assert.zig").assert;
+const assert = @import("./z.zig").assert;
 
 pub const Colour = struct {
     const Self = @This();
