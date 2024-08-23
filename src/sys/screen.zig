@@ -41,48 +41,48 @@ pub fn Sprite(comptime width: usize, comptime height: usize) type {
             return .{ .grid = sprite };
         }
 
-        pub fn render(self: *Self, at: Vec2(i32)) void {
+        pub fn render(self: *Self, at: Vec2(f32)) void {
             screen.blit(at, width, height, self);
         }
 
-        pub fn isInBounds(_: *Self, at: Vec2(i32)) bool {
-            var _at: *Vec2(i32) = @constCast(&at);
-            var _at_end_x: Vec2(i32) = _at.add(.{
-                .x = @intCast(width),
+        pub fn isInBounds(_: *Self, at: Vec2(f32)) bool {
+            var _at: *Vec2(f32) = @constCast(&at);
+            var _at_end_x: Vec2(f32) = _at.add(.{
+                .x = @floatFromInt(width),
                 .y = 0,
             });
-            var _at_end_y: Vec2(i32) = _at.add(.{
+            var _at_end_y: Vec2(f32) = _at.add(.{
                 .x = 0,
-                .y = @intCast(height),
+                .y = @floatFromInt(height),
             });
-            var _at_end_xy: Vec2(i32) = _at.add(.{
-                .x = @intCast(width),
-                .y = @intCast(height),
+            var _at_end_xy: Vec2(f32) = _at.add(.{
+                .x = @floatFromInt(width),
+                .y = @floatFromInt(height),
             });
 
             const res = (_at.isInBounds(
                 0,
-                screen.max_screen_size.x - 1,
+                @floatFromInt(screen.max_screen_size.x - 1),
                 0,
-                screen.max_screen_size.y - 1,
+                @floatFromInt(screen.max_screen_size.y - 1),
             ) or
                 _at_end_x.isInBounds(
                 0,
-                screen.max_screen_size.x - 1,
+                @floatFromInt(screen.max_screen_size.x - 1),
                 0,
-                screen.max_screen_size.y - 1,
+                @floatFromInt(screen.max_screen_size.y - 1),
             ) or
                 _at_end_y.isInBounds(
                 0,
-                screen.max_screen_size.x - 1,
+                @floatFromInt(screen.max_screen_size.x - 1),
                 0,
-                screen.max_screen_size.y - 1,
+                @floatFromInt(screen.max_screen_size.y - 1),
             ) or
                 _at_end_xy.isInBounds(
                 0,
-                screen.max_screen_size.x - 1,
+                @floatFromInt(screen.max_screen_size.x - 1),
                 0,
-                screen.max_screen_size.y - 1,
+                @floatFromInt(screen.max_screen_size.y - 1),
             ));
 
             // std.debug.print("{?} - {?} => {s}\n", .{ _at, _at_end_x, if (res) "true" else "false" });
@@ -101,10 +101,12 @@ pub const screen = struct {
     var buf1: ScreenBuffer = undefined;
     var buf2: ScreenBuffer = undefined;
 
+    var stdOut: std.fs.File = undefined;
+
     pub var max_screen_size = Vec2(u8).init(120, 30);
 
     pub fn print(comptime bytes: []const u8, args: anytype) void {
-        std.debug.print(bytes, args);
+        stdOut.writer().print(bytes, args) catch return;
     }
 
     pub fn init(comptime screen_size: Vec2(u8)) void {
@@ -113,7 +115,8 @@ pub const screen = struct {
         max_screen_size = screen_size;
 
         Cursor.hide();
-        
+        stdOut = std.io.getStdOut();
+
         @memcpy(&buf1, &original_buffer);
         @memcpy(&buf2, &original_buffer);
 
@@ -173,15 +176,18 @@ pub const screen = struct {
         }
     };
 
-    pub fn blitString(at: Vec2(i32), content: []const u8) void {
-        var _at: *Vec2(i32) = @constCast(&at);
+    pub fn blitString(at: Vec2(f32), content: []const u8) void {
+        var _at: Vec2(i32) = Vec2(i32).init(
+            @intFromFloat(at.x),
+            @intFromFloat(at.y),
+        );
 
         if (!_at.isInBounds(0, max_screen_size.x - 1, 0, max_screen_size.x - 1)) {
             return;
         }
 
-        const start_x: usize = @intCast(at.x);
-        const start_y: usize = @intCast(at.y);
+        const start_x: usize = @intCast(_at.x);
+        const start_y: usize = @intCast(_at.y);
 
         for (0..content.len) |x| {
             if (!isOnScreen(@intCast(start_x + x), @intCast(start_y))) continue;
@@ -189,15 +195,17 @@ pub const screen = struct {
         }
     }
 
-    pub fn blit(at: Vec2(i32), comptime w: usize, comptime h: usize, sprite: *Sprite(w, h)) void {
+    pub fn blit(at: Vec2(f32), comptime w: usize, comptime h: usize, sprite: *Sprite(w, h)) void {
         const _sprite = sprite.grid;
+
+        const _at = Vec2(i32).init(@intFromFloat(at.x), @intFromFloat(at.y));
 
         if (!sprite.isInBounds(at)) {
             return;
         }
 
-        const start_x = at.x;
-        const start_y = at.y;
+        const start_x = _at.x;
+        const start_y = _at.y;
 
         for (0.._sprite.len) |dh| {
             for (0.._sprite[0].len) |dw| {

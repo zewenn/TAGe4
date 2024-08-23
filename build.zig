@@ -14,7 +14,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    exe.linkSystemLibrary("ncurses");
+    // exe.linkSystemLibrary("ncurses");
 
     switch (@import("builtin").os.tag) {
         .macos => {

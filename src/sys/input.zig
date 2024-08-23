@@ -13,6 +13,7 @@ const Inputter = struct {
 };
 
 pub const OsXInputter = struct {
+    // ZLS ignore
     pub const c = @cImport({
         @cInclude("IOKit/hid/IOHIDManager.h");
         @cInclude("CoreFoundation/CoreFoundation.h");
@@ -76,7 +77,7 @@ pub const OsXInputter = struct {
         _ = c.endwin();
 
         c.CFRelease(manager);
-        
+
         alloc.free(keymap_buffer);
         alloc.free(last_update_keymap_buffer);
     }
@@ -107,6 +108,81 @@ pub const OsXInputter = struct {
             .getKey = _getKey,
             .getKeyDown = _gKeyDown,
             .getKeyUp = _gKeyUp,
+        };
+    }
+};
+
+pub const WindowsInputter = struct {
+    const c = @cImport({
+        @cInclude("windows.h");
+        @cInclude("conio.h");
+        @cInclude("stdio.h");
+        @cInclude("fcntl.h");
+        @cInclude("io.h");
+    });
+
+    var keymap_buffer: []bool = undefined;
+    var keymap_buffer_last_frame: []bool = undefined;
+
+    var alloc: *Allocator = undefined;
+
+    fn _init(allocator: *Allocator) void {
+        alloc = allocator;
+
+        keymap_buffer = alloc.alloc(bool, std.math.maxInt(u8)) catch unreachable;
+        keymap_buffer_last_frame = alloc.alloc(bool, std.math.maxInt(u8)) catch unreachable;
+
+        // _ = c.setmode(c.STDIN_FILENO, c.O_RAW);
+    }
+
+    fn _update() void {
+        @memcpy(keymap_buffer_last_frame, keymap_buffer);
+        if (c.kbhit() != 0) _ = c.getch();
+    }
+
+    fn _deinit() void {
+        alloc.free(keymap_buffer);
+        alloc.free(keymap_buffer_last_frame);
+
+        // _ = c.setmode(c.fileno(c.stdin), c.O_TEXT);
+    }
+
+    fn _gKey(k: ?u8) bool {
+        if (k == null) return false;
+
+        if (c.GetKeyState(@intCast(k.?)) < 0) {
+            keymap_buffer[k.?] = true;
+            return true;
+        }
+        keymap_buffer[k.?] = false;
+        return false;
+    }
+
+    fn _getKeyDown(k: ?u8) bool {
+        if (k == null) return false;
+
+        if (keymap_buffer_last_frame[k.?]) return false;
+        return _gKey(k);
+    }
+
+    fn _getKeyUp(k: ?u8) bool {
+        if (k == null) return false;
+
+        if (!keymap_buffer_last_frame[k.?]) return false;
+        return !_gKey(k);
+    }
+
+    fn get() Inputter {
+        return Inputter{
+            .keymap = &keymap_buffer,
+            // Events
+            .init = _init,
+            .update = _update,
+            .deinit = _deinit,
+            // Keys
+            .getKey = _gKey,
+            .getKeyDown = _getKeyDown,
+            .getKeyUp = _getKeyUp,
         };
     }
 };
@@ -373,22 +449,154 @@ pub const OsXKeyCodes: KeyCodes = .{
     .DELETE = 42,
 };
 
+pub const WindowsKeyCodes: KeyCodes = .{
+    .NULL = 0,
+    .SOH = 1,
+    .STX = 2,
+    .ETX = 3,
+    .EOT = 4,
+    .ENQ = 5,
+    .ACK = 6,
+    .BEL = 7,
+    .BACKSPACE = 8,
+    .HORTIZONTAL_TAB = 9,
+    .LINE_FEED = 10,
+    .VERTICAL_TAB = 11,
+    .FROM_FEED = 12,
+    .ENTER = 13,
+    .SHIFT_OUT = 14,
+    .SHIFT_IN = 15,
+    .DLE = 16,
+    .DC1 = 17,
+    .DC2 = 18,
+    .DC3 = 19,
+    .DC4 = 20,
+    .NAK = 21,
+    .SYN = 22,
+    .ETB = 23,
+    .CANCEL = 24,
+    .EM = 25,
+    .SUB = 26,
+    .ESCAPE = 27,
+    .FS = 28,
+    .GS = 29,
+    .RS = 30,
+    .US = 31,
+    .SPACE = 32,
+    .EXCLAMATION_MARK = 33,
+    .DOUBLE_QUOTE = 34,
+    .HASHTAG = 35,
+    .DOLLARSIGN = 36,
+    .PERCENTAGE = 37,
+    .ANDSIGN = 38,
+    .SINGLE_QUOTE = 39,
+    .ROUND_BRACKET_START = 40,
+    .ROUND_BRACKET_END = 41,
+    .STAR_SIGN = 42,
+    .PLUS_SIGN = 43,
+    .COMA = 44,
+    .MINUS_SIGN = 45,
+    .DOT = 46,
+    .SLASH_SIGN = 47,
+    .NUMBER_0 = 48,
+    .NUMBER_1 = 49,
+    .NUMBER_2 = 50,
+    .NUMBER_3 = 51,
+    .NUMBER_4 = 52,
+    .NUMBER_5 = 53,
+    .NUMBER_6 = 54,
+    .NUMBER_7 = 55,
+    .NUMBER_8 = 56,
+    .NUMBER_9 = 57,
+    .COLON = 58,
+    .SEMI_COLON = 59,
+    .LARGER_SIGN = 60,
+    .EQUAL_SIGN = 61,
+    .SMALLER_SIGN = 62,
+    .QUESTION_MARK = 63,
+    .AT_SIGN = 64,
+    .A = 65,
+    .B = 66,
+    .C = 67,
+    .D = 68,
+    .E = 69,
+    .F = 70,
+    .G = 71,
+    .H = 72,
+    .I = 73,
+    .J = 74,
+    .K = 75,
+    .L = 76,
+    .M = 77,
+    .N = 78,
+    .O = 79,
+    .P = 80,
+    .Q = 81,
+    .R = 82,
+    .S = 83,
+    .T = 84,
+    .U = 85,
+    .V = 86,
+    .W = 87,
+    .X = 88,
+    .Y = 89,
+    .Z = 90,
+    .SQUARE_BRACKET_START = 91,
+    .BACKSLASH = 92,
+    .SQUARE_BRACKET_END = 93,
+    .CIRCUMFLEX = 94,
+    .UNDERSCORE = 95,
+    .GRAVE_ACCENT = 96,
+    .a = 97,
+    .b = 98,
+    .c = 99,
+    .d = 100,
+    .e = 101,
+    .f = 102,
+    .g = 103,
+    .h = 104,
+    .i = 105,
+    .j = 106,
+    .k = 107,
+    .l = 108,
+    .m = 109,
+    .n = 110,
+    .o = 111,
+    .p = 112,
+    .q = 113,
+    .r = 114,
+    .s = 115,
+    .t = 116,
+    .u = 117,
+    .v = 118,
+    .w = 119,
+    .x = 120,
+    .y = 121,
+    .z = 122,
+    .CURLY_BRACKET_START = 123,
+    .VERTICAL_BAR = 124,
+    .CURLY_BRACKET_END = 125,
+    .SWUNG_DASH = 126,
+    .DELETE = 127,
+};
 
 const OSNotSupportedError = error{OSNotSupported};
+
 pub inline fn getInputter() OSNotSupportedError!Inputter {
     return switch (@import("builtin").target.os.tag) {
-        .windows => OSNotSupportedError,
+        .windows => WindowsInputter.get(),
         .macos => OsXInputter.get(),
         .linux => OSNotSupportedError,
-        else => OSNotSupportedError
+        else => OSNotSupportedError,
     };
 }
 
 // TODO: Make an interface for keycodes!!!
 pub inline fn getKeyCodes() OSNotSupportedError!KeyCodes {
     return switch (@import("builtin").target.os.tag) {
+        .windows => WindowsKeyCodes,
         .macos => OsXKeyCodes,
-        else => OSNotSupportedError
+        else => OSNotSupportedError,
     };
 }
 
