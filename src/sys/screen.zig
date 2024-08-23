@@ -35,7 +35,7 @@ pub const Cell = struct {
 pub fn Sprite(comptime width: usize, comptime height: usize) type {
     return struct {
         const Self = @This();
-        grid: [width][height]Cell,
+        grid: [height][width]Cell,
 
         pub fn init(sprite: [height][width]Cell) Self {
             return .{ .grid = sprite };

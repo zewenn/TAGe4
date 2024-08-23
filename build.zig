@@ -1,6 +1,8 @@
 const std = @import("std");
+const Allocator = @import("std").mem.Allocator;
 
 pub fn build(b: *std.Build) void {
+
     const target = b.standardTargetOptions(.{});
 
     const optimize = b.standardOptimizeOption(.{});
@@ -20,7 +22,7 @@ pub fn build(b: *std.Build) void {
             exe.linkFramework("IOKit");
             exe.linkFramework("CoreFoundation");
         },
-        else => {}
+        else => {},
     }
 
     exe.linkLibC();

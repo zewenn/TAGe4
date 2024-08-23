@@ -1,7 +1,6 @@
 const std = @import("std");
 const print = std.debug.print;
 
-// const input = @import("./deps/zig-input.zig");
 const String = @import("./deps/zig-string.zig").String;
 const Vec2 = @import("./deps/vectors.zig").Vec2;
 
@@ -16,6 +15,8 @@ const getKeyCodes = @import("./sys/input.zig").getKeyCodes;
 
 var pos: Vec2(i32) = Vec2(i32).init(0, 5);
 var rnd = std.Random.DefaultPrng.init(100);
+
+const assets = @import(".temp/assets.zig");
 
 pub fn testfn() void {
     const x: i32 = @intCast(rnd.random().int(u4));
@@ -48,31 +49,6 @@ pub fn main() !void {
     defer screen.deinit();
     screen.Cursor.hide();
 
-    const sprite: *Sprite(5, 5) = @constCast(
-        &Sprite(5, 5).init([_][5]Cell{
-            [_]Cell{Cell{
-                .value = '#',
-                .foreground = .{ .red = 240, .green = 100, .blue = 73 },
-            }} ** 5,
-            [_]Cell{Cell{
-                .value = '#',
-                .foreground = .{ .red = 228, .green = 146, .blue = 115 },
-            }} ** 5,
-            [_]Cell{Cell{
-                .value = '#',
-                .foreground = .{ .red = 219, .green = 213, .blue = 110 },
-            }} ** 5,
-            [_]Cell{Cell{
-                .value = '#',
-                .foreground = .{ .red = 59, .green = 178, .blue = 115 },
-            }} ** 5,
-            [_]Cell{Cell{
-                .value = '#',
-                .foreground = .{ .red = 117, .green = 139, .blue = 253 },
-            }} ** 5,
-        }),
-    );
-
     try events.on("update", testfn);
 
     while (true) {
@@ -97,7 +73,7 @@ pub fn main() !void {
         }
         
 
-        sprite.render(pos);
+        assets.player_left_0.render(pos);
 
         try events.call("update");
         screen.apply();
