@@ -4,9 +4,9 @@ const Allocator = @import("std").mem.Allocator;
 
 const Inputter = struct {
     keymap: *[]bool,
-    getKey: *const fn (u8) bool,
-    getKeyDown: *const fn (u8) bool,
-    getKeyUp: *const fn (u8) bool,
+    getKey: *const fn (?u8) bool,
+    getKeyDown: *const fn (?u8) bool,
+    getKeyUp: *const fn (?u8) bool,
     init: *const fn (*Allocator) void,
     deinit: *const fn () void,
     update: *const fn () void,
@@ -19,8 +19,8 @@ pub const OsXInputter = struct {
         @cInclude("ncurses.h");
     });
 
-    var _keymap: []bool = undefined;
-    var _keymap2: []bool = undefined;
+    var keymap_buffer: []bool = undefined;
+    var last_update_keymap_buffer: []bool = undefined;
     var manager: c.IOHIDManagerRef = undefined;
     var alloc: *Allocator = undefined;
 
@@ -37,18 +37,10 @@ pub const OsXInputter = struct {
         if (key == null) return;
 
         if (pressed != 0) {
-            _keymap[key.?] = true;
-            // std.debug.print("{any}\n\r", .{usage});
+            keymap_buffer[key.?] = true;
             return;
         }
-        _keymap[key.?] = false;
-
-        // if (pressed) {
-        //     printf("Key pressed: %d\n", usage);
-        // } else {
-        //     printf("Key released: %d\n", usage);
-        // }
-
+        keymap_buffer[key.?] = false;
     }
 
     fn _init(allocator: *Allocator) void {
@@ -67,14 +59,14 @@ pub const OsXInputter = struct {
         _ = c.nodelay(c.stdscr, true);
         _ = c.curs_set(c.FALSE);
 
-        _keymap = allocator.alloc(bool, std.math.maxInt(u8)) catch unreachable;
-        _keymap2 = allocator.alloc(bool, std.math.maxInt(u8)) catch unreachable;
+        keymap_buffer = allocator.alloc(bool, std.math.maxInt(u8)) catch unreachable;
+        last_update_keymap_buffer = allocator.alloc(bool, std.math.maxInt(u8)) catch unreachable;
 
         alloc = allocator;
     }
 
     fn _update() void {
-        @memcpy(_keymap2, _keymap);
+        @memcpy(last_update_keymap_buffer, keymap_buffer);
         _ = c.CFRunLoopRunInMode(c.kCFRunLoopDefaultMode, 0.01, c.TRUE);
         _ = c.getch();
     }
@@ -85,27 +77,30 @@ pub const OsXInputter = struct {
 
         c.CFRelease(manager);
         
-        alloc.free(_keymap);
-        alloc.free(_keymap2);
+        alloc.free(keymap_buffer);
+        alloc.free(last_update_keymap_buffer);
     }
 
-    fn _getKey(k: u8) bool {
-        return _keymap[k];
+    fn _getKey(k: ?u8) bool {
+        if (k == null) return false;
+        return keymap_buffer[k.?];
     }
 
-    fn _gKeyDown(k: u8) bool {
-        if (_keymap2[k]) return false;
+    fn _gKeyDown(k: ?u8) bool {
+        if (k == null) return false;
+        if (last_update_keymap_buffer[k.?]) return false;
         return _getKey(k);
     }
 
-    fn _gKeyUp(k: u8) bool {
-        if (!_keymap2[k]) return false;
+    fn _gKeyUp(k: ?u8) bool {
+        if (k == null) return false;
+        if (!last_update_keymap_buffer[k.?]) return false;
         return !_getKey(k);
     }
 
     pub fn get() Inputter {
         return Inputter{
-            .keymap = &_keymap,
+            .keymap = &keymap_buffer,
             .init = _init,
             .update = _update,
             .deinit = _deinit,
@@ -116,96 +111,268 @@ pub const OsXInputter = struct {
     }
 };
 
-pub const OsXKeyCodes = struct {
-	pub const A = 4;
-	pub const B = 5;
-	pub const C = 6;
-	pub const D = 7;
-	pub const E = 8;
-	pub const F = 9;
-	pub const G = 10;
-	pub const H = 11;
-	pub const I = 12;
-	pub const J = 13;
-	pub const K = 14;
-	pub const L = 15;
-	pub const M = 16;
-	pub const N = 17;
-	pub const O = 18;
-	pub const P = 19;
-	pub const Q = 20;
-	pub const R = 21;
-	pub const S = 22;
-	pub const T = 23;
-	pub const U = 24;
-	pub const V = 25;
-	pub const W = 26;
-	pub const X = 27;
-	pub const Y = 28;
-	pub const Z = 29;
-	pub const @"1" = 30;
-	pub const @"2" = 31;
-	pub const @"3" = 32;
-	pub const @"4" = 33;
-	pub const @"5" = 34;
-	pub const @"6" = 35;
-	pub const @"7" = 36;
-	pub const @"8" = 37;
-	pub const @"9" = 38;
-	pub const @"0" = 39;
-	pub const ESCAPE = 41;
-	pub const @"DELETE|BACKSPACE" = 42;
-	pub const TAB = 43;
-	pub const @" " = 44;
-	pub const @"-" = 45;
-	pub const @"=" = 46;
-	pub const @"[" = 47;
-	pub const @"]" = 48;
-	pub const @";" = 51;
-	pub const @"'" = 52;
-	pub const @"`" = 53;
-	pub const @"," = 54;
-	pub const @"." = 55;
-	pub const @"/" = 56;
-	pub const CAPSLOCK = 57;
-	pub const @"F1" = 58;
-	pub const @"F2" = 59;
-	pub const @"F3" = 60;
-	pub const @"F4" = 61;
-	pub const @"F5" = 62;
-	pub const @"F6" = 63;
-	pub const @"F7" = 64;
-	pub const @"F8" = 65;
-	pub const @"F9" = 66;
-	pub const @"F10" = 67;
-	pub const @"F11" = 68;
-	pub const @"F12" = 69;
-	pub const PRINTSCREEN = 70;
-	pub const @"SCROLL-LOCK" = 71;
-	pub const PAUSE = 72;
-	pub const INSERT = 73;
-	pub const HOME = 74;
-	pub const PAGEUP = 75;
-	pub const @"DELETE-FORWARD" = 76;
-	pub const END = 77;
-	pub const PAGEDOWN = 78;
-	pub const RIGHTARROW = 79;
-	pub const LEFTARROW = 80;
-	pub const DOWNARROW = 81;
-	pub const UPARROW = 82;
-	pub const NUMLOCK = 83;
-	pub const @"*" = 85;
-	pub const @"+" = 87;
-	pub const ENTER = 88;
-	pub const LC = 224;
-	pub const LS = 225;
-	pub const LA = 226;
-	pub const LCMD = 227;
-	pub const RC = 228;
-	pub const RS = 229;
-	pub const RA = 230;
-	pub const RCMD = 231;
+pub const KeyCodes = struct {
+    NULL: ?u8 = null,
+    SOH: ?u8 = null,
+    STX: ?u8 = null,
+    ETX: ?u8 = null,
+    EOT: ?u8 = null,
+    ENQ: ?u8 = null,
+    ACK: ?u8 = null,
+    BEL: ?u8 = null,
+    BACKSPACE: ?u8 = null,
+    HORTIZONTAL_TAB: ?u8 = null,
+    LINE_FEED: ?u8 = null,
+    VERTICAL_TAB: ?u8 = null,
+    FROM_FEED: ?u8 = null,
+    ENTER: ?u8 = null,
+    SHIFT_OUT: ?u8 = null,
+    SHIFT_IN: ?u8 = null,
+    DLE: ?u8 = null,
+    DC1: ?u8 = null,
+    DC2: ?u8 = null,
+    DC3: ?u8 = null,
+    DC4: ?u8 = null,
+    NAK: ?u8 = null,
+    SYN: ?u8 = null,
+    ETB: ?u8 = null,
+    CANCEL: ?u8 = null,
+    EM: ?u8 = null,
+    SUB: ?u8 = null,
+    ESCAPE: ?u8 = null,
+    FS: ?u8 = null,
+    GS: ?u8 = null,
+    RS: ?u8 = null,
+    US: ?u8 = null,
+    SPACE: ?u8 = null,
+    EXCLAMATION_MARK: ?u8 = null,
+    DOUBLE_QUOTE: ?u8 = null,
+    HASHTAG: ?u8 = null,
+    DOLLARSIGN: ?u8 = null,
+    PERCENTAGE: ?u8 = null,
+    ANDSIGN: ?u8 = null,
+    SINGLE_QUOTE: ?u8 = null,
+    ROUND_BRACKET_START: ?u8 = null,
+    ROUND_BRACKET_END: ?u8 = null,
+    STAR_SIGN: ?u8 = null,
+    PLUS_SIGN: ?u8 = null,
+    COMA: ?u8 = null,
+    MINUS_SIGN: ?u8 = null,
+    DOT: ?u8 = null,
+    SLASH_SIGN: ?u8 = null,
+    NUMBER_0: ?u8 = null,
+    NUMBER_1: ?u8 = null,
+    NUMBER_2: ?u8 = null,
+    NUMBER_3: ?u8 = null,
+    NUMBER_4: ?u8 = null,
+    NUMBER_5: ?u8 = null,
+    NUMBER_6: ?u8 = null,
+    NUMBER_7: ?u8 = null,
+    NUMBER_8: ?u8 = null,
+    NUMBER_9: ?u8 = null,
+    COLON: ?u8 = null,
+    SEMI_COLON: ?u8 = null,
+    LARGER_SIGN: ?u8 = null,
+    EQUAL_SIGN: ?u8 = null,
+    SMALLER_SIGN: ?u8 = null,
+    QUESTION_MARK: ?u8 = null,
+    AT_SIGN: ?u8 = null,
+    A: ?u8 = null,
+    B: ?u8 = null,
+    C: ?u8 = null,
+    D: ?u8 = null,
+    E: ?u8 = null,
+    F: ?u8 = null,
+    G: ?u8 = null,
+    H: ?u8 = null,
+    I: ?u8 = null,
+    J: ?u8 = null,
+    K: ?u8 = null,
+    L: ?u8 = null,
+    M: ?u8 = null,
+    N: ?u8 = null,
+    O: ?u8 = null,
+    P: ?u8 = null,
+    Q: ?u8 = null,
+    R: ?u8 = null,
+    S: ?u8 = null,
+    T: ?u8 = null,
+    U: ?u8 = null,
+    V: ?u8 = null,
+    W: ?u8 = null,
+    X: ?u8 = null,
+    Y: ?u8 = null,
+    Z: ?u8 = null,
+    SQUARE_BRACKET_START: ?u8 = null,
+    BACKSLASH: ?u8 = null,
+    SQUARE_BRACKET_END: ?u8 = null,
+    CIRCUMFLEX: ?u8 = null,
+    UNDERSCORE: ?u8 = null,
+    GRAVE_ACCENT: ?u8 = null,
+    a: ?u8 = null,
+    b: ?u8 = null,
+    c: ?u8 = null,
+    d: ?u8 = null,
+    e: ?u8 = null,
+    f: ?u8 = null,
+    g: ?u8 = null,
+    h: ?u8 = null,
+    i: ?u8 = null,
+    j: ?u8 = null,
+    k: ?u8 = null,
+    l: ?u8 = null,
+    m: ?u8 = null,
+    n: ?u8 = null,
+    o: ?u8 = null,
+    p: ?u8 = null,
+    q: ?u8 = null,
+    r: ?u8 = null,
+    s: ?u8 = null,
+    t: ?u8 = null,
+    u: ?u8 = null,
+    v: ?u8 = null,
+    w: ?u8 = null,
+    x: ?u8 = null,
+    y: ?u8 = null,
+    z: ?u8 = null,
+    CURLY_BRACKET_START: ?u8 = null,
+    VERTICAL_BAR: ?u8 = null,
+    CURLY_BRACKET_END: ?u8 = null,
+    SWUNG_DASH: ?u8 = null,
+    DELETE: ?u8 = null,
 };
+
+pub const OsXKeyCodes: KeyCodes = .{
+    .NULL = null,
+    .SOH = null,
+    .STX = null,
+    .ETX = null,
+    .EOT = null,
+    .ENQ = null,
+    .ACK = null,
+    .BEL = null,
+    .BACKSPACE = 42,
+    .HORTIZONTAL_TAB = null,
+    .LINE_FEED = null,
+    .VERTICAL_TAB = null,
+    .FROM_FEED = null,
+    .ENTER = 88,
+    .SHIFT_OUT = null,
+    .SHIFT_IN = null,
+    .DLE = null,
+    .DC1 = null,
+    .DC2 = null,
+    .DC3 = null,
+    .DC4 = null,
+    .NAK = null,
+    .SYN = null,
+    .ETB = null,
+    .CANCEL = null,
+    .EM = null,
+    .SUB = null,
+    .ESCAPE = 41,
+    .FS = null,
+    .GS = null,
+    .RS = 229,
+    .US = null,
+    .SPACE = 44,
+    .EXCLAMATION_MARK = 30,
+    .DOUBLE_QUOTE = 52,
+    .HASHTAG = 32,
+    .DOLLARSIGN = 33,
+    .PERCENTAGE = 34,
+    .ANDSIGN = 36,
+    .SINGLE_QUOTE = 52,
+    .ROUND_BRACKET_START = 38,
+    .ROUND_BRACKET_END = 39,
+    .STAR_SIGN = 37,
+    .PLUS_SIGN = 46,
+    .COMA = 54,
+    .MINUS_SIGN = 45,
+    .DOT = 55,
+    .SLASH_SIGN = 56,
+    .NUMBER_0 = 39,
+    .NUMBER_1 = 30,
+    .NUMBER_2 = 31,
+    .NUMBER_3 = 32,
+    .NUMBER_4 = 33,
+    .NUMBER_5 = 34,
+    .NUMBER_6 = 35,
+    .NUMBER_7 = 36,
+    .NUMBER_8 = 37,
+    .NUMBER_9 = 38,
+    .COLON = 51,
+    .SEMI_COLON = 51,
+    .LARGER_SIGN = 54,
+    .EQUAL_SIGN = 46,
+    .SMALLER_SIGN = 55,
+    .QUESTION_MARK = 56,
+    .AT_SIGN = 31,
+    .A = 4,
+    .B = 5,
+    .C = 6,
+    .D = 7,
+    .E = 8,
+    .F = 9,
+    .G = 10,
+    .H = 11,
+    .I = 12,
+    .J = 13,
+    .K = 14,
+    .L = 15,
+    .M = 16,
+    .N = 17,
+    .O = 18,
+    .P = 19,
+    .Q = 20,
+    .R = 21,
+    .S = 22,
+    .T = 23,
+    .U = 24,
+    .V = 25,
+    .W = 26,
+    .X = 27,
+    .Y = 28,
+    .Z = 29,
+    .SQUARE_BRACKET_START = 47,
+    .BACKSLASH = null,
+    .SQUARE_BRACKET_END = 48,
+    .CIRCUMFLEX = 35,
+    .UNDERSCORE = 45,
+    .GRAVE_ACCENT = 53,
+    .a = 4,
+    .b = 5,
+    .c = 6,
+    .d = 7,
+    .e = 8,
+    .f = 9,
+    .g = 10,
+    .h = 11,
+    .i = 12,
+    .j = 13,
+    .k = 14,
+    .l = 15,
+    .m = 16,
+    .n = 17,
+    .o = 18,
+    .p = 19,
+    .q = 20,
+    .r = 21,
+    .s = 22,
+    .t = 23,
+    .u = 24,
+    .v = 25,
+    .w = 26,
+    .x = 27,
+    .y = 28,
+    .z = 29,
+    .CURLY_BRACKET_START = 47,
+    .VERTICAL_BAR = 49,
+    .CURLY_BRACKET_END = 48,
+    .SWUNG_DASH = 53,
+    .DELETE = 42,
+};
+
 
 const OSNotSupportedError = error{OSNotSupported};
 pub inline fn getInputter() OSNotSupportedError!Inputter {
@@ -218,7 +385,7 @@ pub inline fn getInputter() OSNotSupportedError!Inputter {
 }
 
 // TODO: Make an interface for keycodes!!!
-pub inline fn getKeyCodes() OSNotSupportedError!type {
+pub inline fn getKeyCodes() OSNotSupportedError!KeyCodes {
     return switch (@import("builtin").target.os.tag) {
         .macos => OsXKeyCodes,
         else => OSNotSupportedError
