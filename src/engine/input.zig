@@ -233,11 +233,11 @@ pub const NCursesInputter = struct {
         alloc.free(keymap_buffer);
     }
 
-    fn _gKey(key: u8) bool {
-        return keymap_buffer[key];
+    fn _gKey(k: ?u8) bool {
+        return keymap_buffer[k.?];
     }
 
-    fn NotSupported() bool {
+    fn NotSupported(_: ?u8) bool {
         return false;
     } 
 
@@ -661,29 +661,29 @@ fn Setting(comptime T: type) type {
         pub fn use(self: *Self) OSNotSupportedError!T {
             if (!self.use_default) return OSNotSupportedError.OSNotSupported;
             if (self.default == null) return OSNotSupportedError.NoDefaultGiven;
-            return self.default;
+            return self.default.?;
         }    
     };
 }
 
 pub inline fn getInputter(settings: Setting(Inputter)) OSNotSupportedError!Inputter {
-    if (settings.override_correct) return settings.use();
+    if (settings.override_correct) return @constCast(&settings).use();
     
     return switch (@import("builtin").target.os.tag) {
         .windows => WindowsInputter.get(),
         .macos => OsXInputter.get(),
-        else => settings.use(),
+        else => @constCast(&settings).use(),
     };
 }
 
 // TODO: Make an interface for keycodes!!!
 pub inline fn getKeyCodes(settings: Setting(KeyCodes)) OSNotSupportedError!KeyCodes {
-    if (settings.override_correct) return settings.use();
+    if (settings.override_correct) return @constCast(&settings).use();
 
     return switch (@import("builtin").target.os.tag) {
         .windows => ASCIIKeyCodes,
         .macos => OsXKeyCodes,
-        else => settings.use(),
+        else => @constCast(&settings).use(),
     };
 }
 

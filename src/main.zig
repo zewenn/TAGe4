@@ -26,19 +26,11 @@ pub fn main() !void {
 
     var allocator = gpa.allocator();
 
-    const KeyCodes = e.Input.getKeyCodes(.{
-        .override_correct = true,
-        .use_default = true,
-        .default = ASCIIKeyCodes
-    }) catch {
+    const KeyCodes = e.Input.getKeyCodes(.{}) catch {
         std.debug.print("OS Not Supported", .{});
         return;
     };
-    const Inputter = e.Input.getInputter(.{
-        .override_correct = true,
-        .use_default = true,
-        .default = NCursesInputter.get()
-    }) catch {
+    const Inputter = e.Input.getInputter(.{}) catch {
         std.debug.print("OS Not Supported", .{});
         return;
     };
@@ -78,6 +70,7 @@ pub fn main() !void {
         
 
         assets.player_left_0.render(pos);
+        assets.player_left_0.render(pos.add(Vec2(f32).init(5, 5)));
 
         try e.Events.call("update");
         e.Screen.apply();
