@@ -189,6 +189,72 @@ pub const WindowsInputter = struct {
     }
 };
 
+pub const NCursesInputter = struct {
+    const c = @cImport({
+        @cInclude("ncurses.h");
+    });
+
+    var keymap_buffer: []bool = undefined;
+    var alloc: *Allocator = undefined;
+    const uframes = 1;
+    var frames: u32 = 0;
+
+    var sourse: c.CGEventSourceRef = undefined;
+
+    fn _init(allocator: *Allocator) void {
+        _ = c.initscr();
+        _ = c.cbreak();
+        _ = c.noecho();
+        _ = c.keypad(c.stdscr, true);
+        _ = c.nodelay(c.stdscr, true);
+        _ = c.curs_set(c.FALSE);
+
+        keymap_buffer = allocator.alloc(bool, std.math.maxInt(u8)) catch unreachable;
+        alloc = allocator;
+    }
+
+    fn _update() void {
+        frames += 1;
+        if (frames >= uframes) {
+            for (0..keymap_buffer.len) |key| {
+                keymap_buffer[key] = false;
+            }
+        }
+
+        const at = std.math.cast(u8, @as(i32, @intCast((c.getch()))));
+        if (at == null) return;
+        if (at.? >= keymap_buffer.len) return;
+
+        keymap_buffer[at.?] = true;
+    }
+
+    fn _deinit() void {
+        _ = c.endwin();
+        alloc.free(keymap_buffer);
+    }
+
+    fn _gKey(key: u8) bool {
+        return keymap_buffer[key];
+    }
+
+    fn NotSupported() bool {
+        return false;
+    } 
+
+    pub fn get() Inputter {
+        return Inputter{
+            .keymap = &keymap_buffer,
+            .init = _init,
+            .update = _update,
+            .deinit = _deinit,
+            .getKey = _gKey,
+            .getKeyDown = NotSupported,
+            .getKeyUp = NotSupported
+        };
+    }
+
+};
+
 pub const KeyCodes = struct {
     NULL: ?u8 = null,
     SOH: ?u8 = null,
@@ -451,7 +517,7 @@ pub const OsXKeyCodes: KeyCodes = .{
     .DELETE = 42,
 };
 
-pub const WindowsKeyCodes: KeyCodes = .{
+pub const ASCIIKeyCodes: KeyCodes = .{
     .NULL = 0,
     .SOH = 1,
     .STX = 2,
@@ -582,204 +648,223 @@ pub const WindowsKeyCodes: KeyCodes = .{
     .DELETE = 127,
 };
 
-const OSNotSupportedError = error{OSNotSupported};
+const OSNotSupportedError = error{OSNotSupported, NoDefaultGiven};
 
-pub inline fn getInputter() OSNotSupportedError!Inputter {
+fn Setting(comptime T: type) type {
+    return struct {
+        const Self = @This();
+
+        use_default: bool = false,
+        override_correct: bool = false,
+        default: ?T = null,
+        
+        pub fn use(self: *Self) OSNotSupportedError!T {
+            if (!self.use_default) return OSNotSupportedError.OSNotSupported;
+            if (self.default == null) return OSNotSupportedError.NoDefaultGiven;
+            return self.default;
+        }    
+    };
+}
+
+pub inline fn getInputter(settings: Setting(Inputter)) OSNotSupportedError!Inputter {
+    if (settings.override_correct) return settings.use();
+    
     return switch (@import("builtin").target.os.tag) {
         .windows => WindowsInputter.get(),
         .macos => OsXInputter.get(),
-        .linux => OSNotSupportedError,
-        else => OSNotSupportedError,
+        else => settings.use(),
     };
 }
 
 // TODO: Make an interface for keycodes!!!
-pub inline fn getKeyCodes() OSNotSupportedError!KeyCodes {
+pub inline fn getKeyCodes(settings: Setting(KeyCodes)) OSNotSupportedError!KeyCodes {
+    if (settings.override_correct) return settings.use();
+
     return switch (@import("builtin").target.os.tag) {
-        .windows => WindowsKeyCodes,
+        .windows => ASCIIKeyCodes,
         .macos => OsXKeyCodes,
-        else => OSNotSupportedError,
+        else => settings.use(),
     };
 }
 
-/// **DEPRECATED**: This does not use the `Inputter` interface!
-pub const NCursesInputter = struct {
-    const c = @cImport({
-        @cInclude("ncurses.h");
-    });
+// /// **DEPRECATED**: This does not use the `Inputter` interface!
+// pub const NCursesInputter = struct {
+//     const c = @cImport({
+//         @cInclude("ncurses.h");
+//     });
 
-    var keymap: []bool = undefined;
-    var alloc: *Allocator = undefined;
-    const uframes = 1;
-    var frames: u32 = 0;
+//     var keymap: []bool = undefined;
+//     var alloc: *Allocator = undefined;
+//     const uframes = 1;
+//     var frames: u32 = 0;
 
-    var sourse: c.CGEventSourceRef = undefined;
+//     var sourse: c.CGEventSourceRef = undefined;
 
-    pub fn init(allocator: *Allocator) void {
-        _ = c.initscr();
-        _ = c.cbreak();
-        _ = c.noecho();
-        _ = c.keypad(c.stdscr, true);
-        _ = c.nodelay(c.stdscr, true);
-        _ = c.curs_set(c.FALSE);
+//     pub fn init(allocator: *Allocator) void {
+//         _ = c.initscr();
+//         _ = c.cbreak();
+//         _ = c.noecho();
+//         _ = c.keypad(c.stdscr, true);
+//         _ = c.nodelay(c.stdscr, true);
+//         _ = c.curs_set(c.FALSE);
 
-        keymap = allocator.alloc(bool, std.math.maxInt(u8)) catch unreachable;
-        alloc = allocator;
-    }
+//         keymap = allocator.alloc(bool, std.math.maxInt(u8)) catch unreachable;
+//         alloc = allocator;
+//     }
 
-    pub fn poll() void {
-        frames += 1;
-        if (frames >= uframes) {
-            for (0..keymap.len) |key| {
-                keymap[key] = false;
-            }
-        }
+//     pub fn poll() void {
+//         frames += 1;
+//         if (frames >= uframes) {
+//             for (0..keymap.len) |key| {
+//                 keymap[key] = false;
+//             }
+//         }
 
-        const at = std.math.cast(u8, @as(i32, @intCast((c.getch()))));
-        if (at == null) return;
-        if (at.? >= keymap.len) return;
+//         const at = std.math.cast(u8, @as(i32, @intCast((c.getch()))));
+//         if (at == null) return;
+//         if (at.? >= keymap.len) return;
 
-        keymap[at.?] = true;
-    }
+//         keymap[at.?] = true;
+//     }
 
-    pub fn getKey(key: u8) bool {
-        return keymap[key];
-    }
+//     pub fn getKey(key: u8) bool {
+//         return keymap[key];
+//     }
 
-    pub fn deinit() void {
-        _ = c.endwin();
-        alloc.free(keymap);
-    }
+//     pub fn deinit() void {
+//         _ = c.endwin();
+//         alloc.free(keymap);
+//     }
 
-    /// Macros for the first 128 ASCII characters
-    pub const keys = struct {
-        pub const NULL: u8 = 0;
-        pub const SOH: u8 = 1;
-        pub const STX: u8 = 2;
-        pub const ETX: u8 = 3;
-        pub const EOT: u8 = 4;
-        pub const ENQ: u8 = 5;
-        pub const ACK: u8 = 6;
-        pub const BEL: u8 = 7;
-        pub const BACKSPACE: u8 = 8;
-        pub const HORTIZONTAL_TAB: u8 = 9;
-        pub const LINE_FEED: u8 = 10;
-        pub const VERTICAL_TAB: u8 = 11;
-        pub const FROM_FEED: u8 = 12;
-        pub const ENTER: u8 = 13;
-        pub const SHIFT_OUT: u8 = 14;
-        pub const SHIFT_IN: u8 = 15;
-        pub const DLE: u8 = 16;
-        pub const DC1: u8 = 17;
-        pub const DC2: u8 = 18;
-        pub const DC3: u8 = 19;
-        pub const DC4: u8 = 20;
-        pub const NAK: u8 = 21;
-        pub const SYN: u8 = 22;
-        pub const ETB: u8 = 23;
-        pub const CANCEL: u8 = 24;
-        pub const EM: u8 = 25;
-        pub const SUB: u8 = 26;
-        pub const ESCAPE: u8 = 27;
-        pub const FS: u8 = 28;
-        pub const GS: u8 = 29;
-        pub const RS: u8 = 30;
-        pub const US: u8 = 31;
-        pub const SPACE: u8 = 32;
-        pub const EXCLAMATION_MARK: u8 = 33;
-        pub const DOUBLE_QUOTE: u8 = 34;
-        pub const HASHTAG: u8 = 35;
-        pub const DOLLARSIGN: u8 = 36;
-        pub const PERCENTAGE: u8 = 37;
-        pub const ANDSIGN: u8 = 38;
-        pub const SINGLE_QUOTE: u8 = 39;
-        pub const ROUND_BRACKET_START: u8 = 40;
-        pub const ROUND_BRACKET_END: u8 = 41;
-        pub const STAR_SIGN: u8 = 42;
-        pub const PLUS_SIGN: u8 = 43;
-        pub const COMA: u8 = 44;
-        pub const MINUS_SIGN: u8 = 45;
-        pub const DOT: u8 = 46;
-        pub const SLASH_SIGN: u8 = 47;
-        pub const NUMBER_0: u8 = 48;
-        pub const NUMBER_1: u8 = 49;
-        pub const NUMBER_2: u8 = 50;
-        pub const NUMBER_3: u8 = 51;
-        pub const NUMBER_4: u8 = 52;
-        pub const NUMBER_5: u8 = 53;
-        pub const NUMBER_6: u8 = 54;
-        pub const NUMBER_7: u8 = 55;
-        pub const NUMBER_8: u8 = 56;
-        pub const NUMBER_9: u8 = 57;
-        pub const COLON: u8 = 58;
-        pub const SEMI_COLON: u8 = 59;
-        pub const LARGER_SIGN: u8 = 60;
-        pub const EQUAL_SIGN: u8 = 61;
-        pub const SMALLER_SIGN: u8 = 62;
-        pub const QUESTION_MARK: u8 = 63;
-        pub const AT_SIGN: u8 = 64;
-        pub const A: u8 = 65;
-        pub const B: u8 = 66;
-        pub const C: u8 = 67;
-        pub const D: u8 = 68;
-        pub const E: u8 = 69;
-        pub const F: u8 = 70;
-        pub const G: u8 = 71;
-        pub const H: u8 = 72;
-        pub const I: u8 = 73;
-        pub const J: u8 = 74;
-        pub const K: u8 = 75;
-        pub const L: u8 = 76;
-        pub const M: u8 = 77;
-        pub const N: u8 = 78;
-        pub const O: u8 = 79;
-        pub const P: u8 = 80;
-        pub const Q: u8 = 81;
-        pub const R: u8 = 82;
-        pub const S: u8 = 83;
-        pub const T: u8 = 84;
-        pub const U: u8 = 85;
-        pub const V: u8 = 86;
-        pub const W: u8 = 87;
-        pub const X: u8 = 88;
-        pub const Y: u8 = 89;
-        pub const Z: u8 = 90;
-        pub const SQUARE_BRACKET_START: u8 = 91;
-        pub const BACKSLASH: u8 = 92;
-        pub const SQUARE_BRACKET_END: u8 = 93;
-        pub const CIRCUMFLEX: u8 = 94;
-        pub const UNDERSCORE: u8 = 95;
-        pub const GRAVE_ACCENT: u8 = 96;
-        pub const a: u8 = 97;
-        pub const b: u8 = 98;
-        pub const c: u8 = 99;
-        pub const d: u8 = 100;
-        pub const e: u8 = 101;
-        pub const f: u8 = 102;
-        pub const g: u8 = 103;
-        pub const h: u8 = 104;
-        pub const i: u8 = 105;
-        pub const j: u8 = 106;
-        pub const k: u8 = 107;
-        pub const l: u8 = 108;
-        pub const m: u8 = 109;
-        pub const n: u8 = 110;
-        pub const o: u8 = 111;
-        pub const p: u8 = 112;
-        pub const q: u8 = 113;
-        pub const r: u8 = 114;
-        pub const s: u8 = 115;
-        pub const t: u8 = 116;
-        pub const u: u8 = 117;
-        pub const v: u8 = 118;
-        pub const w: u8 = 119;
-        pub const x: u8 = 120;
-        pub const y: u8 = 121;
-        pub const z: u8 = 122;
-        pub const CURLY_BRACKET_START: u8 = 123;
-        pub const VERTICAL_BAR: u8 = 124;
-        pub const CURLY_BRACKET_END: u8 = 125;
-        pub const SWUNG_DASH: u8 = 126;
-        pub const DELETE: u8 = 127;
-    };
-};
+//     /// Macros for the first 128 ASCII characters
+//     pub const keys = struct {
+//         pub const NULL: u8 = 0;
+//         pub const SOH: u8 = 1;
+//         pub const STX: u8 = 2;
+//         pub const ETX: u8 = 3;
+//         pub const EOT: u8 = 4;
+//         pub const ENQ: u8 = 5;
+//         pub const ACK: u8 = 6;
+//         pub const BEL: u8 = 7;
+//         pub const BACKSPACE: u8 = 8;
+//         pub const HORTIZONTAL_TAB: u8 = 9;
+//         pub const LINE_FEED: u8 = 10;
+//         pub const VERTICAL_TAB: u8 = 11;
+//         pub const FROM_FEED: u8 = 12;
+//         pub const ENTER: u8 = 13;
+//         pub const SHIFT_OUT: u8 = 14;
+//         pub const SHIFT_IN: u8 = 15;
+//         pub const DLE: u8 = 16;
+//         pub const DC1: u8 = 17;
+//         pub const DC2: u8 = 18;
+//         pub const DC3: u8 = 19;
+//         pub const DC4: u8 = 20;
+//         pub const NAK: u8 = 21;
+//         pub const SYN: u8 = 22;
+//         pub const ETB: u8 = 23;
+//         pub const CANCEL: u8 = 24;
+//         pub const EM: u8 = 25;
+//         pub const SUB: u8 = 26;
+//         pub const ESCAPE: u8 = 27;
+//         pub const FS: u8 = 28;
+//         pub const GS: u8 = 29;
+//         pub const RS: u8 = 30;
+//         pub const US: u8 = 31;
+//         pub const SPACE: u8 = 32;
+//         pub const EXCLAMATION_MARK: u8 = 33;
+//         pub const DOUBLE_QUOTE: u8 = 34;
+//         pub const HASHTAG: u8 = 35;
+//         pub const DOLLARSIGN: u8 = 36;
+//         pub const PERCENTAGE: u8 = 37;
+//         pub const ANDSIGN: u8 = 38;
+//         pub const SINGLE_QUOTE: u8 = 39;
+//         pub const ROUND_BRACKET_START: u8 = 40;
+//         pub const ROUND_BRACKET_END: u8 = 41;
+//         pub const STAR_SIGN: u8 = 42;
+//         pub const PLUS_SIGN: u8 = 43;
+//         pub const COMA: u8 = 44;
+//         pub const MINUS_SIGN: u8 = 45;
+//         pub const DOT: u8 = 46;
+//         pub const SLASH_SIGN: u8 = 47;
+//         pub const NUMBER_0: u8 = 48;
+//         pub const NUMBER_1: u8 = 49;
+//         pub const NUMBER_2: u8 = 50;
+//         pub const NUMBER_3: u8 = 51;
+//         pub const NUMBER_4: u8 = 52;
+//         pub const NUMBER_5: u8 = 53;
+//         pub const NUMBER_6: u8 = 54;
+//         pub const NUMBER_7: u8 = 55;
+//         pub const NUMBER_8: u8 = 56;
+//         pub const NUMBER_9: u8 = 57;
+//         pub const COLON: u8 = 58;
+//         pub const SEMI_COLON: u8 = 59;
+//         pub const LARGER_SIGN: u8 = 60;
+//         pub const EQUAL_SIGN: u8 = 61;
+//         pub const SMALLER_SIGN: u8 = 62;
+//         pub const QUESTION_MARK: u8 = 63;
+//         pub const AT_SIGN: u8 = 64;
+//         pub const A: u8 = 65;
+//         pub const B: u8 = 66;
+//         pub const C: u8 = 67;
+//         pub const D: u8 = 68;
+//         pub const E: u8 = 69;
+//         pub const F: u8 = 70;
+//         pub const G: u8 = 71;
+//         pub const H: u8 = 72;
+//         pub const I: u8 = 73;
+//         pub const J: u8 = 74;
+//         pub const K: u8 = 75;
+//         pub const L: u8 = 76;
+//         pub const M: u8 = 77;
+//         pub const N: u8 = 78;
+//         pub const O: u8 = 79;
+//         pub const P: u8 = 80;
+//         pub const Q: u8 = 81;
+//         pub const R: u8 = 82;
+//         pub const S: u8 = 83;
+//         pub const T: u8 = 84;
+//         pub const U: u8 = 85;
+//         pub const V: u8 = 86;
+//         pub const W: u8 = 87;
+//         pub const X: u8 = 88;
+//         pub const Y: u8 = 89;
+//         pub const Z: u8 = 90;
+//         pub const SQUARE_BRACKET_START: u8 = 91;
+//         pub const BACKSLASH: u8 = 92;
+//         pub const SQUARE_BRACKET_END: u8 = 93;
+//         pub const CIRCUMFLEX: u8 = 94;
+//         pub const UNDERSCORE: u8 = 95;
+//         pub const GRAVE_ACCENT: u8 = 96;
+//         pub const a: u8 = 97;
+//         pub const b: u8 = 98;
+//         pub const c: u8 = 99;
+//         pub const d: u8 = 100;
+//         pub const e: u8 = 101;
+//         pub const f: u8 = 102;
+//         pub const g: u8 = 103;
+//         pub const h: u8 = 104;
+//         pub const i: u8 = 105;
+//         pub const j: u8 = 106;
+//         pub const k: u8 = 107;
+//         pub const l: u8 = 108;
+//         pub const m: u8 = 109;
+//         pub const n: u8 = 110;
+//         pub const o: u8 = 111;
+//         pub const p: u8 = 112;
+//         pub const q: u8 = 113;
+//         pub const r: u8 = 114;
+//         pub const s: u8 = 115;
+//         pub const t: u8 = 116;
+//         pub const u: u8 = 117;
+//         pub const v: u8 = 118;
+//         pub const w: u8 = 119;
+//         pub const x: u8 = 120;
+//         pub const y: u8 = 121;
+//         pub const z: u8 = 122;
+//         pub const CURLY_BRACKET_START: u8 = 123;
+//         pub const VERTICAL_BAR: u8 = 124;
+//         pub const CURLY_BRACKET_END: u8 = 125;
+//         pub const SWUNG_DASH: u8 = 126;
+//         pub const DELETE: u8 = 127;
+//     };
+// };

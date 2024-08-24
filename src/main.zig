@@ -9,6 +9,9 @@ const e =  @import("./engine/engine.zig").TAG4;
 var pos = Vec2(f32).init(0, 5);
 var rnd = std.Random.DefaultPrng.init(100);
 
+const NCursesInputter = @import("./engine/input.zig").NCursesInputter;
+const ASCIIKeyCodes = @import("./engine/input.zig").ASCIIKeyCodes;
+
 const assets = @import(".temp/assets.zig");
 
 pub fn testfn() void {
@@ -23,8 +26,22 @@ pub fn main() !void {
 
     var allocator = gpa.allocator();
 
-    const KeyCodes = e.Input.KeyCodes;
-    const Inputter = e.Input.Inputter;
+    const KeyCodes = e.Input.getKeyCodes(.{
+        .override_correct = true,
+        .use_default = true,
+        .default = ASCIIKeyCodes
+    }) catch {
+        std.debug.print("OS Not Supported", .{});
+        return;
+    };
+    const Inputter = e.Input.getInputter(.{
+        .override_correct = true,
+        .use_default = true,
+        .default = NCursesInputter.get()
+    }) catch {
+        std.debug.print("OS Not Supported", .{});
+        return;
+    };
     Inputter.init(&allocator);
     defer Inputter.deinit();
 
