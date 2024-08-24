@@ -4,14 +4,7 @@ const print = std.debug.print;
 const String = @import("./deps/zig-string.zig").String;
 const Vec2 = @import("./deps/vectors.zig").Vec2;
 
-const events = @import("./sys/events.zig").events;
-
-const screen = @import("./sys/screen.zig").screen;
-const Cell = @import("./sys/screen.zig").Cell;
-const Sprite = @import("./sys/screen.zig").Sprite;
-
-const getInputter = @import("./sys/input.zig").getInputter;
-const getKeyCodes = @import("./sys/input.zig").getKeyCodes;
+const e =  @import("./engine/engine.zig").TAG4;
 
 var pos = Vec2(f32).init(0, 5);
 var rnd = std.Random.DefaultPrng.init(100);
@@ -21,7 +14,7 @@ const assets = @import(".temp/assets.zig");
 pub fn testfn() void {
     const x: f32 = @floatFromInt(rnd.random().int(u4));
 
-    screen.blitString(Vec2(f32).init(pos.y + x, pos.x), "x");
+    e.Screen.blitString(Vec2(f32).init(pos.y + x, pos.x), "x");
 }
 
 pub fn main() !void {
@@ -30,30 +23,24 @@ pub fn main() !void {
 
     var allocator = gpa.allocator();
 
-    const KeyCodes = getKeyCodes() catch {
-        std.debug.print("The KeyCodes for this OS are not available, yet!", .{});
-        return;
-    };
-    const Inputter = getInputter() catch {
-        std.debug.print("The Inputter for this OS is not supported, yet!", .{});
-        return;
-    };
+    const KeyCodes = e.Input.KeyCodes;
+    const Inputter = e.Input.Inputter;
     Inputter.init(&allocator);
     defer Inputter.deinit();
 
-    events.init(&allocator);
-    defer events.deinit();
+    e.Events.init(&allocator);
+    defer e.Events.deinit();
 
 
-    screen.init(.{ .x = 120, .y = 30 });
-    defer screen.deinit();
-    screen.Cursor.hide();
+    e.Screen.init(.{ .x = 120, .y = 30 });
+    defer e.Screen.deinit();
+    e.Screen.Cursor.hide();
 
-    try events.on("update", testfn);
+    try e.Events.on("update", testfn);
 
     while (true) {
         Inputter.update();
-        screen.clearBuffer();
+        e.Screen.clearBuffer();
 
         if (Inputter.getKey(KeyCodes.A)) {
             pos.x -= 1;
@@ -75,7 +62,7 @@ pub fn main() !void {
 
         assets.player_left_0.render(pos);
 
-        try events.call("update");
-        screen.apply();
+        try e.Events.call("update");
+        e.Screen.apply();
     }
 }
