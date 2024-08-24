@@ -12,27 +12,27 @@ The Engine usues system libraries to read input directly from the keyboard inste
 > [!TIP]
 > If the engine doesn't support your platform you can add a default `Inputter` like this:
 > ```zig
-// Get the Inputter Struct
-const NCursesInputter = @import("./engine/input.zig").NCursesInputter;
-const ASCIIKeyCodes = @import("./engine/input.zig").ASCIIKeyCodes;
-
-const KeyCodes = e.Input.getKeyCodes(.{
-    .override_correct = true, // Even with supported OS, still use the default.
-    .use_default = true, // Enable Default instead of errors
-    .default = ASCIIKeyCodes // Default KeyCodes
-}) catch {
-    std.debug.print("OS Not Supported", .{});
-    return;
-};
-const Inputter = e.Input.getInputter(.{
-    .override_correct = true, // Even with supported OS, still use the default.
-    .use_default = true, // Enable Default instead of errors
-    .default = NCursesInputter.get() // Default Inputter
-}) catch {
-    std.debug.print("OS Not Supported", .{});
-    return;
-};
-```
+> // Get the Inputter Struct
+> const NCursesInputter = @import("./engine/input.zig").NCursesInputter;
+> const ASCIIKeyCodes = @import("./engine/input.zig").ASCIIKeyCodes;
+> 
+> const KeyCodes = e.Input.getKeyCodes(.{
+>     .override_correct = true, // Even with supported OS, still use the default.
+>     .use_default = true, // Enable Default instead of errors
+>     .default = ASCIIKeyCodes // Default KeyCodes
+> }) catch {
+>     std.debug.print("OS Not Supported", .{});
+>     return;
+> };
+> const Inputter = e.Input.getInputter(.{
+>     .override_correct = true, // Even with supported OS, still use the default.
+>     .use_default = true, // Enable Default instead of errors
+>     .default = NCursesInputter.get() // Default Inputter
+> }) catch {
+>     std.debug.print("OS Not Supported", .{});
+>     return;
+> };
+> ```
 
 ### Renderer
 The engine uses a Console Renderer (thus Text Adventure). This is still a work in progress and still needs a lot of features.
