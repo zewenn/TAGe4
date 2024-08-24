@@ -1,18 +1,28 @@
 const std = @import("std");
 const print = std.debug.print;
+
 const String = @import("./deps/zig-string.zig").String;
-const keys = @import("./deps/keys.zig");
+const Vec2 = @import("./deps/vectors.zig").Vec2;
 
-const menus = @import("./menus.zig");
-const entities = @import("./entities.zig");
+const events = @import("./sys/events.zig").events;
 
-const clang = @cImport({
-    @cInclude("stdlib.h");
-    @cInclude("stdio.h");
-    @cInclude("conio.h");
-});
+const screen = @import("./sys/screen.zig").screen;
+const Cell = @import("./sys/screen.zig").Cell;
+const Sprite = @import("./sys/screen.zig").Sprite;
 
-const menu_objs = @import("./menu_setup.zig");
+const getInputter = @import("./sys/input.zig").getInputter;
+const getKeyCodes = @import("./sys/input.zig").getKeyCodes;
+
+var pos = Vec2(f32).init(0, 5);
+var rnd = std.Random.DefaultPrng.init(100);
+
+const assets = @import(".temp/assets.zig");
+
+pub fn testfn() void {
+    const x: f32 = @floatFromInt(rnd.random().int(u4));
+
+    screen.blitString(Vec2(f32).init(pos.y + x, pos.x), "x");
+}
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -20,75 +30,52 @@ pub fn main() !void {
 
     var allocator = gpa.allocator();
 
-    var player = try entities.Entity.init(&allocator, "player");
-    defer player.deinit();
+    const KeyCodes = getKeyCodes() catch {
+        std.debug.print("The KeyCodes for this OS are not available, yet!", .{});
+        return;
+    };
+    const Inputter = getInputter() catch {
+        std.debug.print("The Inputter for this OS is not supported, yet!", .{});
+        return;
+    };
+    Inputter.init(&allocator);
+    defer Inputter.deinit();
 
-    try menu_objs.main_menu.init(&allocator);
-    defer menu_objs.main_menu.deinit();
+    events.init(&allocator);
+    defer events.deinit();
 
-    try menu_objs.town_of_swinford_menu.init(&allocator);
-    defer menu_objs.town_of_swinford_menu.deinit();
 
-    const main_menu = menu_objs.main_menu.self();
-    menus.loadNextMenu(main_menu);
+    screen.init(.{ .x = 120, .y = 30 });
+    defer screen.deinit();
+    screen.Cursor.hide();
 
-    // const town_of_swinford_menu = menu_objs.town_of_swinford_menu.self();
+    try events.on("update", testfn);
 
-    var lastchar: u8 = 1;
+    while (true) {
+        Inputter.update();
+        screen.clearBuffer();
 
-    update: while (menus.running) {
-        print("\x1b[2J\x1b[H", .{});
-        print("[DEBUG] Last char: {?}\n\n", .{lastchar});
-        try menus.current_menu.render();
-
-        if (!menus.current_menu.id.cmp("main_menu")) {
-            const barlen: i32 = 20;
-
-            const hp_precent: i32 = @intFromFloat(@round(player.health / player.max_health * 20));
-
-            print("\nHealth: [", .{});
-            for (0..barlen) |i| {
-                if (i <= hp_precent) {
-                    print("|", .{});
-                    continue;
-                }
-                print(" ", .{});
-            }
-            print("]", .{});
+        if (Inputter.getKey(KeyCodes.A)) {
+            pos.x -= 1;
+        }
+        if (Inputter.getKey(KeyCodes.D)) {
+            pos.x += 1;
+        }
+        if (Inputter.getKey(KeyCodes.W)) {
+            pos.y -= 1;
+        }
+        if (Inputter.getKey(KeyCodes.S)) {
+            pos.y += 1;
         }
 
-        print("\n\nw - Up | s - Down | ENTER - Interact | q - Main Menu\n\n", .{});
-
-        const char: u8 = @intCast(clang.getch());
-
-        lastchar = char;
-
-        switch (char) {
-            // ESC
-            keys.ESCAPE => {
-                break :update;
-            },
-            keys.H => {
-                menus.current_menu.setChoiceIndex(-1);
-            },
-            keys.P => {
-                menus.current_menu.setChoiceIndex(1);
-            },
-            keys.ENTER => {
-                menus.current_menu.interact();
-            },
-            keys.q => {
-                menus.loadNextMenu(main_menu);
-            },
-            keys.PLUS_SIGN => {
-                player.health += 5;
-            },
-            keys.MINUS_SIGN => {
-                player.health -= 5;
-            },
-            else => {},
+        if (Inputter.getKey(KeyCodes.ESCAPE)) {
+            break;
         }
+        
+
+        assets.player_left_0.render(pos);
+
+        try events.call("update");
+        screen.apply();
     }
-
-    print("\x1b[2J\x1b[H", .{});
 }
