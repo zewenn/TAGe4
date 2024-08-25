@@ -1,0 +1,3 @@
+[submodule "libs/zstbi"]
+	path = libs/zstbi
+	url = https://github.com/zig-gamedev/zstbi.git
