@@ -1,5 +1,7 @@
 pub const TAGe4 = struct {
-    pub const Events = @import("./events.zig").events;
+    pub const EventHandler = @import("./events.zig").EventHandler;
+    pub const EngineEvents = @import("./events.zig").EngineEvents;
+
     pub const Vec2 = @import("./vectors.zig").Vec2;
 
     // Input

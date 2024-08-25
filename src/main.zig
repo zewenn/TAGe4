@@ -36,15 +36,17 @@ pub fn main() !void {
     Inputter.init(&allocator);
     defer Inputter.deinit();
 
-    e.Events.init(&allocator);
-    defer e.Events.deinit();
+    const Events = e.EventHandler(.{});
+
+    Events.init(&allocator);
+    defer Events.deinit();
 
 
     e.Screen.init(.{ .x = 120, .y = 30 });
     defer e.Screen.deinit();
     e.Screen.Cursor.hide();
 
-    try e.Events.on("update", testfn);
+    try Events.on(.Update, testfn);
 
     while (true) {
         Inputter.update();
@@ -71,7 +73,7 @@ pub fn main() !void {
         assets.player_left_0.render(pos);
         assets.player_left_0.render(pos.add(Vec2(f64).init(5, 5)));
 
-        try e.Events.call("update");
+        try Events.call(.Update);
         e.Screen.apply();
         e.Time.tick(60);
     }
