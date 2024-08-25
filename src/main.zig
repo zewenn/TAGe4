@@ -2,9 +2,9 @@ const std = @import("std");
 const print = std.debug.print;
 
 const String = @import("./deps/zig-string.zig").String;
-const Vec2 = @import("./deps/vectors.zig").Vec2;
 
-const e =  @import("./engine/engine.zig").TAG4;
+const e =  @import("./engine/engine.zig").TAGe4;
+const Vec2 = e.Vec2;
 
 var pos = Vec2(f64).init(0, 5);
 var rnd = std.Random.DefaultPrng.init(100);

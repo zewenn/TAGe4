@@ -1,6 +1,9 @@
 const std = @import("std");
-const Vec2 = @import("../deps/vectors.zig").Vec2;
+const Vec2 = @import("./vectors.zig").Vec2;
 const assert = @import("./z.zig").assert;
+
+const Point = Vec2(f64);
+const ScreenPoint = Vec2(i64);
 
 pub const Colour = struct {
     const Self = @This();
@@ -41,21 +44,21 @@ pub fn Sprite(comptime width: usize, comptime height: usize) type {
             return .{ .grid = sprite };
         }
 
-        pub fn render(self: *Self, at: Vec2(f64)) void {
+        pub fn render(self: *Self, at: Point) void {
             screen.blit(at, width, height, self);
         }
 
-        pub fn isInBounds(_: *Self, at: Vec2(f64)) bool {
-            var _at: *Vec2(f64) = @constCast(&at);
-            var _at_end_x: Vec2(f64) = _at.add(.{
+        pub fn isInBounds(_: *Self, at: Point) bool {
+            var _at: *Point = @constCast(&at);
+            var _at_end_x: Point = _at.add(.{
                 .x = @floatFromInt(width),
                 .y = 0,
             });
-            var _at_end_y: Vec2(f64) = _at.add(.{
+            var _at_end_y: Point = _at.add(.{
                 .x = 0,
                 .y = @floatFromInt(height),
             });
-            var _at_end_xy: Vec2(f64) = _at.add(.{
+            var _at_end_xy: Point = _at.add(.{
                 .x = @floatFromInt(width),
                 .y = @floatFromInt(height),
             });
@@ -178,8 +181,8 @@ pub const screen = struct {
         }
     };
 
-    pub fn blitString(at: Vec2(f64), content: []const u8) void {
-        var _at: Vec2(i64) = Vec2(i64).init(
+    pub fn blitString(at: Point, content: []const u8) void {
+        var _at: ScreenPoint = ScreenPoint.init(
             @intFromFloat(at.x),
             @intFromFloat(at.y),
         );
@@ -197,10 +200,10 @@ pub const screen = struct {
         }
     }
 
-    pub fn blit(at: Vec2(f64), comptime w: usize, comptime h: usize, sprite: *Sprite(w, h)) void {
+    pub fn blit(at: Point, comptime w: usize, comptime h: usize, sprite: *Sprite(w, h)) void {
         const _sprite = sprite.grid;
 
-        const _at = Vec2(i64).init(@intFromFloat(at.x), @intFromFloat(at.y));
+        const _at = ScreenPoint.init(@intFromFloat(at.x), @intFromFloat(at.y));
 
         if (!sprite.isInBounds(at)) {
             return;

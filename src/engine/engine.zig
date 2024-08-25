@@ -1,5 +1,6 @@
-pub const TAG4 = struct {
+pub const TAGe4 = struct {
     pub const Events = @import("./events.zig").events;
+    pub const Vec2 = @import("./vectors.zig").Vec2;
 
     // Input
     pub const Input = struct {
