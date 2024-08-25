@@ -13,7 +13,12 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    // exe.linkSystemLibrary("ncurses");
+    // Image processing and sprite loading
+    const zstbi = b.dependency("zstbi", .{});
+    {
+        exe.root_module.addImport("zstbi", zstbi.module("root"));
+        exe.linkLibrary(zstbi.artifact("zstbi"));
+    }
 
     switch (@import("builtin").os.tag) {
         .macos => {

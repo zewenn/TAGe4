@@ -1,20 +1,20 @@
 const std = @import("std");
 const print = std.debug.print;
 
-const String = @import("./deps/zig-string.zig").String;
+const String = @import("../libs/zig-string.zig").String;
 
-const e =  @import("./engine/engine.zig").TAGe4;
+const e = @import("./engine/engine.zig").TAGe4;
 const Vec2 = e.Vec2;
 
 var pos = Vec2(f64).init(0, 5);
 var rnd = std.Random.DefaultPrng.init(100);
 
-const assets = @import(".temp/assets.zig");
+// const assets = @import(".temp/assets.zig");
 
 pub fn testfn() void {
-    const x: f64 = @floatFromInt(rnd.random().int(u4));
+    // const x: f64 = @floatFromInt(rnd.random().int(u4));
 
-    e.Screen.blitString(Vec2(f64).init(pos.y + x, pos.x), "x");
+    // e.Screen.blitString(e.Point.init(pos.y + x, pos.x), "x");
 }
 
 pub fn main() !void {
@@ -41,16 +41,23 @@ pub fn main() !void {
     Events.init(&allocator);
     defer Events.deinit();
 
+    const Screen = e.Display(.{});
 
-    e.Screen.init(.{ .x = 120, .y = 30 });
-    defer e.Screen.deinit();
-    e.Screen.Cursor.hide();
+    Screen.init();
+    defer Screen.deinit();
+    Screen.Cursor.hide();
+
+    var sprite = e.Sprite.init(&allocator, 10, 5);
+    defer sprite.deinit();
+    sprite.populate(10, 5, [_][10]e.Cell{
+        [_]e.Cell{.{ .value = '#' }} ** 10,
+    } ** 5);
 
     try Events.on(.Update, testfn);
 
     while (true) {
         Inputter.update();
-        e.Screen.clearBuffer();
+        Screen.clearBuffer();
 
         if (Inputter.getKey(KeyCodes.A)) {
             pos.x -= 100 * e.Time.delta;
@@ -68,13 +75,13 @@ pub fn main() !void {
         if (Inputter.getKey(KeyCodes.ESCAPE)) {
             break;
         }
-        
 
-        assets.player_left_0.render(pos);
-        assets.player_left_0.render(pos.add(Vec2(f64).init(5, 5)));
+        // assets.player_left_0.render(pos);
+        // assets.player_left_0.render(pos.add(Vec2(f64).init(5, 5)));
+        Screen.blit(pos, sprite);
 
         try Events.call(.Update);
-        e.Screen.apply();
+        Screen.apply();
         e.Time.tick(60);
     }
 }

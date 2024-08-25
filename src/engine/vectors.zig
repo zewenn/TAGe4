@@ -1,30 +1,13 @@
 const std = @import("std");
 const print = std.debug.print;
 
-// pub const IntVector2D = struct {
-//     const Self = @This();
-//     x: i32,
-//     y: i32,
-// };
+pub inline fn Matrix2(comptime T: type, comptime x: comptime_int, comptime y: comptime_int) type {
+    return [y][x]T;
+}
 
-// pub const Vector2D = struct {
-//     const Self = @This();
-//     x: f32,
-//     y: f32,
-
-//     pub fn init(x: f32, y: f32) Vector2D {
-//         return .{
-//             .x = x,
-//             .y = y,
-//         };
-//     }
-
-//     pub fn round(self: *Self) IntVector2D {
-//         return IntVector2D{ .x = @intFromFloat(@round(self.x)), .y = @intFromFloat(@round(self.y)) };
-//     }
-
-//     pub fn isInBounds(self: *Self, x_start: f32, x_end: f32, y_start: f32, y_end: f32) bool {}
-// };
+pub inline fn HeapMatrix(T: type) type {
+    return [][]T;
+}
 
 pub fn Vec2(comptime T: type) type {
     return struct {

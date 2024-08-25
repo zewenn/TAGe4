@@ -11,9 +11,11 @@ pub const TAGe4 = struct {
     };
 
     // Rendering
-    pub const Screen = @import("./screen.zig").screen;
-    pub const Sprite = @import("./screen.zig").Sprite;
-    pub const Cell = @import("./screen.zig").Cell;
+    pub const Display = @import("./renderer.zig").Display;
+    pub const Sprite = @import("./renderer.zig").Sprite;
+    pub const Cell = @import("./renderer.zig").Cell;
+    pub const Point = @import("./renderer.zig").Point;
+    pub const ScreenPoint = @import("./renderer.zig").ScreenPoint;
 
     pub const Time = @import("./time.zig").time;
 };

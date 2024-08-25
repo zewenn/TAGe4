@@ -99,8 +99,8 @@ def main() -> None:
         )
 
     outfile = ""
-    outfile += 'const Sprite = @import("../engine/screen.zig").Sprite;\n'
-    outfile += 'const Cell = @import("../engine/screen.zig").Cell;\n'
+    outfile += 'const Sprite = @import("../engine/renderer.zig").Sprite;\n'
+    outfile += 'const Cell = @import("../engine/renderer.zig").Cell;\n'
 
     for sprite in sprites:
         outfile += generate_zig_code(sprite)
