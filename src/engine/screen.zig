@@ -41,21 +41,21 @@ pub fn Sprite(comptime width: usize, comptime height: usize) type {
             return .{ .grid = sprite };
         }
 
-        pub fn render(self: *Self, at: Vec2(f32)) void {
+        pub fn render(self: *Self, at: Vec2(f64)) void {
             screen.blit(at, width, height, self);
         }
 
-        pub fn isInBounds(_: *Self, at: Vec2(f32)) bool {
-            var _at: *Vec2(f32) = @constCast(&at);
-            var _at_end_x: Vec2(f32) = _at.add(.{
+        pub fn isInBounds(_: *Self, at: Vec2(f64)) bool {
+            var _at: *Vec2(f64) = @constCast(&at);
+            var _at_end_x: Vec2(f64) = _at.add(.{
                 .x = @floatFromInt(width),
                 .y = 0,
             });
-            var _at_end_y: Vec2(f32) = _at.add(.{
+            var _at_end_y: Vec2(f64) = _at.add(.{
                 .x = 0,
                 .y = @floatFromInt(height),
             });
-            var _at_end_xy: Vec2(f32) = _at.add(.{
+            var _at_end_xy: Vec2(f64) = _at.add(.{
                 .x = @floatFromInt(width),
                 .y = @floatFromInt(height),
             });
@@ -149,7 +149,7 @@ pub const screen = struct {
         print("\x1b[2J\x1b[H", .{});
     }
 
-    fn isOnScreen(x: i32, y: i32) bool {
+    fn isOnScreen(x: i64, y: i64) bool {
         if ((x < 0 or y < 0) or (x >= max_screen_size.x or y >= max_screen_size.y)) {
             return false;
         }
@@ -178,8 +178,8 @@ pub const screen = struct {
         }
     };
 
-    pub fn blitString(at: Vec2(f32), content: []const u8) void {
-        var _at: Vec2(i32) = Vec2(i32).init(
+    pub fn blitString(at: Vec2(f64), content: []const u8) void {
+        var _at: Vec2(i64) = Vec2(i64).init(
             @intFromFloat(at.x),
             @intFromFloat(at.y),
         );
@@ -197,10 +197,10 @@ pub const screen = struct {
         }
     }
 
-    pub fn blit(at: Vec2(f32), comptime w: usize, comptime h: usize, sprite: *Sprite(w, h)) void {
+    pub fn blit(at: Vec2(f64), comptime w: usize, comptime h: usize, sprite: *Sprite(w, h)) void {
         const _sprite = sprite.grid;
 
-        const _at = Vec2(i32).init(@intFromFloat(at.x), @intFromFloat(at.y));
+        const _at = Vec2(i64).init(@intFromFloat(at.x), @intFromFloat(at.y));
 
         if (!sprite.isInBounds(at)) {
             return;
@@ -211,8 +211,8 @@ pub const screen = struct {
 
         for (0.._sprite.len) |dh| {
             for (0.._sprite[0].len) |dw| {
-                const px: i32 = start_x + @as(i32, @intCast(dw));
-                const py: i32 = start_y + @as(i32, @intCast(dh));
+                const px: i64 = start_x + @as(i64, @intCast(dw));
+                const py: i64 = start_y + @as(i64, @intCast(dh));
 
                 if (!isOnScreen(px, py)) continue;
 

@@ -196,7 +196,7 @@ pub const NCursesInputter = struct {
 
     var keymap_buffer: []bool = undefined;
     var alloc: *Allocator = undefined;
-    const uframes = 1;
+    const uframes = 4;
     var frames: u32 = 0;
 
     var sourse: c.CGEventSourceRef = undefined;

@@ -6,18 +6,15 @@ const Vec2 = @import("./deps/vectors.zig").Vec2;
 
 const e =  @import("./engine/engine.zig").TAG4;
 
-var pos = Vec2(f32).init(0, 5);
+var pos = Vec2(f64).init(0, 5);
 var rnd = std.Random.DefaultPrng.init(100);
-
-const NCursesInputter = @import("./engine/input.zig").NCursesInputter;
-const ASCIIKeyCodes = @import("./engine/input.zig").ASCIIKeyCodes;
 
 const assets = @import(".temp/assets.zig");
 
 pub fn testfn() void {
-    const x: f32 = @floatFromInt(rnd.random().int(u4));
+    const x: f64 = @floatFromInt(rnd.random().int(u4));
 
-    e.Screen.blitString(Vec2(f32).init(pos.y + x, pos.x), "x");
+    e.Screen.blitString(Vec2(f64).init(pos.y + x, pos.x), "x");
 }
 
 pub fn main() !void {
@@ -25,6 +22,8 @@ pub fn main() !void {
     defer _ = gpa.deinit();
 
     var allocator = gpa.allocator();
+
+    e.Time.start(60);
 
     const KeyCodes = e.Input.getKeyCodes(.{}) catch {
         std.debug.print("OS Not Supported", .{});
@@ -52,16 +51,16 @@ pub fn main() !void {
         e.Screen.clearBuffer();
 
         if (Inputter.getKey(KeyCodes.A)) {
-            pos.x -= 1;
+            pos.x -= 100 * e.Time.delta;
         }
         if (Inputter.getKey(KeyCodes.D)) {
-            pos.x += 1;
+            pos.x += 100 * e.Time.delta;
         }
         if (Inputter.getKey(KeyCodes.W)) {
-            pos.y -= 1;
+            pos.y -= 100 * e.Time.delta;
         }
         if (Inputter.getKey(KeyCodes.S)) {
-            pos.y += 1;
+            pos.y += 100 * e.Time.delta;
         }
 
         if (Inputter.getKey(KeyCodes.ESCAPE)) {
@@ -70,9 +69,10 @@ pub fn main() !void {
         
 
         assets.player_left_0.render(pos);
-        assets.player_left_0.render(pos.add(Vec2(f32).init(5, 5)));
+        assets.player_left_0.render(pos.add(Vec2(f64).init(5, 5)));
 
         try e.Events.call("update");
         e.Screen.apply();
+        e.Time.tick(60);
     }
 }
