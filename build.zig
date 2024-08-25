@@ -20,6 +20,7 @@ pub fn build(b: *std.Build) void {
         exe.linkLibrary(zstbi.artifact("zstbi"));
     }
 
+    // Linking platrofm specific frameworks
     switch (@import("builtin").os.tag) {
         .macos => {
             exe.linkFramework("ApplicationServices");
@@ -30,7 +31,34 @@ pub fn build(b: *std.Build) void {
         else => {},
     }
 
+    // Well, you always need libC
     exe.linkLibC();
+
+    // Automatic file "import"
+    {
+        const files_dir = "./src/assets/";
+        const output_file = std.fs.cwd().createFile("src/.temp/filenames.zig", .{}) catch unreachable;
+
+        const seg = generateFileNames(files_dir);
+        defer {
+            seg.list.deinit();
+        }
+
+        var writer = output_file.writer();
+        _ = writer.write("pub const Filenames = [_][]const u8{\n") catch unreachable;
+        for (seg.list.items, 0..seg.list.items.len) |item, i| {
+            if (i == 0) {
+                _ = writer.write("\t\"") catch unreachable;
+            } else {
+                _ = writer.write("\",\n\t\"") catch unreachable;
+            }
+            writer.print("{s}", .{item}) catch unreachable;
+            if (i == seg.list.items.len - 1) {
+                _ = writer.write("\"") catch unreachable;
+            }
+        }
+        _ = writer.write("\n};") catch unreachable;
+    }
 
     b.installArtifact(exe);
 
@@ -53,4 +81,29 @@ pub fn build(b: *std.Build) void {
 
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&run_exe_unit_tests.step);
+}
+
+const Segment = struct {
+    alloc: std.mem.Allocator,
+    list: std.ArrayListAligned([]const u8, null),
+};
+
+fn generateFileNames(files_dir: []const u8) Segment {
+    const dir = std.fs.cwd().openDir(files_dir, .{ .iterate = true }) catch unreachable;
+    defer @constCast(&dir).close();
+    
+    var result = std.ArrayList([]const u8).init(std.heap.page_allocator);
+    // defer result.deinit();
+
+    var it = dir.iterate();
+    while (it.next() catch unreachable) |entry| {
+        if (entry.kind == .file) {
+            result.append(entry.name) catch unreachable;
+        }
+    }
+
+    return Segment{
+        .alloc = std.heap.page_allocator,
+        .list = result,
+    };
 }

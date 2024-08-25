@@ -23,8 +23,8 @@ pub fn main() !void {
 
     var allocator = gpa.allocator();
 
-    try e.Assets.init();
-    print("{s}", .{e.Assets.files});
+    try e.Assets.compile();
+    print("{any}", .{e.Assets.files});
 
     e.Time.start(60);
 
