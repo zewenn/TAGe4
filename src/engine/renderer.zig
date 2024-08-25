@@ -2,8 +2,6 @@ const std = @import("std");
 const v = @import("./vectors.zig");
 const assert = @import("./z.zig").assert;
 const Allocator = @import("std").mem.Allocator;
-const stbi = @import("zstbi");
-
 pub const Point = v.Vec2(f64);
 pub const ScreenPoint = v.Vec2(i64);
 

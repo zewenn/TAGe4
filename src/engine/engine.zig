@@ -18,4 +18,5 @@ pub const TAGe4 = struct {
     pub const ScreenPoint = @import("./renderer.zig").ScreenPoint;
 
     pub const Time = @import("./time.zig").time;
+    pub const Assets = @import("./assets.zig").assets;
 };
