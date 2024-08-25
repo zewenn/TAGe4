@@ -2,13 +2,40 @@ const std = @import("std");
 const z = @import("./z.zig");
 const Allocator = @import("std").mem.Allocator;
 
-const Inputter = struct {
+// ================================================
+//
+//                   INPUTTER
+//
+// ================================================
+
+/// The interface for handling input.
+/// Implementation varies based on platforms.
+pub const Inputter = struct {
+    /// Heap allocated array of booleans corresponding to keycodes. 
+    /// When an element of the array is `true`, the key is pressed.
     keymap: *[]bool,
+
+    /// Returns the current state of the key; `true` if the key is pressed
+    /// `false` if not.
     getKey: *const fn (?u8) bool,
+
+    /// Only returns `true` if the queried key wasn't pressed during the last 
+    /// `update()` call and it is now.
     getKeyDown: *const fn (?u8) bool,
+
+    /// Only returns `true` if the queried key was pressed during the last 
+    /// `update()` call and it isn't now.
     getKeyUp: *const fn (?u8) bool,
+
+    /// Allocates heap memory for the `keymap` and initalises the platform 
+    /// specific handlers
     init: *const fn (*Allocator) void,
+
+    /// Free the `keymap` and deinitalises all platform specific handles
     deinit: *const fn () void,
+
+    /// This function needs to run every tick to maintain cross-platform 
+    /// keypress detection.
     update: *const fn () void,
 };
 
@@ -129,8 +156,6 @@ pub const WindowsInputter = struct {
     fn _init(allocator: *Allocator) void {
         alloc = allocator;
 
-        
-
         keymap_buffer = alloc.alloc(bool, std.math.maxInt(u8)) catch unreachable;
         keymap_buffer_last_frame = alloc.alloc(bool, std.math.maxInt(u8)) catch unreachable;
 
@@ -239,21 +264,18 @@ pub const NCursesInputter = struct {
 
     fn NotSupported(_: ?u8) bool {
         return false;
-    } 
-
-    pub fn get() Inputter {
-        return Inputter{
-            .keymap = &keymap_buffer,
-            .init = _init,
-            .update = _update,
-            .deinit = _deinit,
-            .getKey = _gKey,
-            .getKeyDown = NotSupported,
-            .getKeyUp = NotSupported
-        };
     }
 
+    pub fn get() Inputter {
+        return Inputter{ .keymap = &keymap_buffer, .init = _init, .update = _update, .deinit = _deinit, .getKey = _gKey, .getKeyDown = NotSupported, .getKeyUp = NotSupported };
+    }
 };
+
+// ================================================
+//
+//                   KEYCODES
+//
+// ================================================
 
 pub const KeyCodes = struct {
     NULL: ?u8 = null,
@@ -648,7 +670,7 @@ pub const ASCIIKeyCodes: KeyCodes = .{
     .DELETE = 127,
 };
 
-const OSNotSupportedError = error{OSNotSupported, NoDefaultGiven};
+const OSNotSupportedError = error{ OSNotSupported, NoDefaultGiven };
 
 fn Setting(comptime T: type) type {
     return struct {
@@ -657,18 +679,18 @@ fn Setting(comptime T: type) type {
         use_default: bool = false,
         override_correct: bool = false,
         default: ?T = null,
-        
+
         pub fn use(self: *Self) OSNotSupportedError!T {
             if (!self.use_default) return OSNotSupportedError.OSNotSupported;
             if (self.default == null) return OSNotSupportedError.NoDefaultGiven;
             return self.default.?;
-        }    
+        }
     };
 }
 
 pub inline fn getInputter(settings: Setting(Inputter)) OSNotSupportedError!Inputter {
     if (settings.override_correct) return @constCast(&settings).use();
-    
+
     return switch (@import("builtin").target.os.tag) {
         .windows => WindowsInputter.get(),
         .macos => OsXInputter.get(),
