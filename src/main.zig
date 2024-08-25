@@ -1,20 +1,20 @@
 const std = @import("std");
 const print = std.debug.print;
 
-const String = @import("./deps/zig-string.zig").String;
-const Vec2 = @import("./deps/vectors.zig").Vec2;
+const String = @import("../libs/zig-string.zig").String;
 
-const e =  @import("./engine/engine.zig").TAG4;
+const e = @import("./engine/engine.zig").TAGe4;
+const Vec2 = e.Vec2;
 
 var pos = Vec2(f64).init(0, 5);
 var rnd = std.Random.DefaultPrng.init(100);
 
-const assets = @import(".temp/assets.zig");
+// const assets = @import(".temp/assets.zig");
 
 pub fn testfn() void {
-    const x: f64 = @floatFromInt(rnd.random().int(u4));
+    // const x: f64 = @floatFromInt(rnd.random().int(u4));
 
-    e.Screen.blitString(Vec2(f64).init(pos.y + x, pos.x), "x");
+    // e.Screen.blitString(e.Point.init(pos.y + x, pos.x), "x");
 }
 
 pub fn main() !void {
@@ -22,6 +22,12 @@ pub fn main() !void {
     defer _ = gpa.deinit();
 
     var allocator = gpa.allocator();
+
+    try e.Assets.compile();
+    try e.Assets.init(&allocator);
+    defer e.Assets.deinit();
+
+    // print("{any}", .{e.Assets.files});
 
     e.Time.start(60);
 
@@ -36,19 +42,24 @@ pub fn main() !void {
     Inputter.init(&allocator);
     defer Inputter.deinit();
 
-    e.Events.init(&allocator);
-    defer e.Events.deinit();
+    const Events = e.EventHandler(.{});
 
+    Events.init(&allocator);
+    defer Events.deinit();
 
-    e.Screen.init(.{ .x = 120, .y = 30 });
-    defer e.Screen.deinit();
-    e.Screen.Cursor.hide();
+    const Screen = e.Display(.{});
 
-    try e.Events.on("update", testfn);
+    Screen.init();
+    defer Screen.deinit();
+    Screen.Cursor.hide();
+
+    const sprite = e.Assets.get("player_left_0.png").?;
+
+    try Events.on(.Update, testfn);
 
     while (true) {
         Inputter.update();
-        e.Screen.clearBuffer();
+        Screen.clearBuffer();
 
         if (Inputter.getKey(KeyCodes.A)) {
             pos.x -= 100 * e.Time.delta;
@@ -66,13 +77,13 @@ pub fn main() !void {
         if (Inputter.getKey(KeyCodes.ESCAPE)) {
             break;
         }
-        
 
-        assets.player_left_0.render(pos);
-        assets.player_left_0.render(pos.add(Vec2(f64).init(5, 5)));
+        // assets.player_left_0.render(pos);
+        // assets.player_left_0.render(pos.add(Vec2(f64).init(5, 5)));
+        Screen.blit(pos, sprite);
 
-        try e.Events.call("update");
-        e.Screen.apply();
+        try Events.call(.Update);
+        Screen.apply();
         e.Time.tick(60);
     }
 }
