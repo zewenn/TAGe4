@@ -45,8 +45,8 @@ pub const Sprite = struct {
 
     pub fn init(
         allocator: *Allocator,
-        comptime width: usize,
-        comptime height: usize,
+        width: usize,
+        height: usize,
     ) Self {
         const _grid = allocator.alloc([]Cell, height) catch unreachable;
         for (_grid) |*row| {

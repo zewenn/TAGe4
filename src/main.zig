@@ -24,7 +24,10 @@ pub fn main() !void {
     var allocator = gpa.allocator();
 
     try e.Assets.compile();
-    print("{any}", .{e.Assets.files});
+    try e.Assets.init(&allocator);
+    defer e.Assets.deinit();
+
+    // print("{any}", .{e.Assets.files});
 
     e.Time.start(60);
 
@@ -50,11 +53,7 @@ pub fn main() !void {
     defer Screen.deinit();
     Screen.Cursor.hide();
 
-    var sprite = e.Sprite.init(&allocator, 10, 5);
-    defer sprite.deinit();
-    sprite.populate(10, 5, [_][10]e.Cell{
-        [_]e.Cell{.{ .value = '#' }} ** 10,
-    } ** 5);
+    const sprite = e.Assets.get("player_left_0.png").?;
 
     try Events.on(.Update, testfn);
 
