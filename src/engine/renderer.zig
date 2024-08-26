@@ -259,6 +259,36 @@ pub inline fn Display(comptime options: DisplayOptions) type {
             }
         }
 
+        fn applyPixel(at: v.Vec2(usize)) void {
+            const y = at.y;
+            const x = at.x;
+
+            Cursor.move(@intCast(x * 2), @intCast(y));
+            print("\x1b[38;2;{d};{d};{d}m\x1b[48;2;{d};{d};{d}m{c}\x1b[0m", .{
+                buf1[y][x].foreground.red,
+                buf1[y][x].foreground.green,
+                buf1[y][x].foreground.blue,
+                //
+                buf1[y][x].background.red,
+                buf1[y][x].background.green,
+                buf1[y][x].background.blue,
+                //
+                buf1[y][x].value,
+            });
+            Cursor.move(@intCast(x * 2 + 1), @intCast(y));
+            print("\x1b[38;2;{d};{d};{d}m\x1b[48;2;{d};{d};{d}m{c}\x1b[0m", .{
+                buf1[y][x].foreground.red,
+                buf1[y][x].foreground.green,
+                buf1[y][x].foreground.blue,
+                //
+                buf1[y][x].background.red,
+                buf1[y][x].background.green,
+                buf1[y][x].background.blue,
+                //
+                buf1[y][x].value,
+            });
+        }
+
         pub fn apply() void {
             assert(buf1.len == buf2.len, "the buffers have mismatched sizes");
 
@@ -266,18 +296,7 @@ pub inline fn Display(comptime options: DisplayOptions) type {
                 for (0..buf1[0].len) |x| {
                     if (!buf1[y][x].eql(buf2[y][x])) {
                         buf1[y][x] = buf2[y][x];
-                        Cursor.move(@intCast(x), @intCast(y));
-                        print("\x1b[38;2;{d};{d};{d}m\x1b[48;2;{d};{d};{d}m{c}\x1b[0m", .{
-                            buf1[y][x].foreground.red,
-                            buf1[y][x].foreground.green,
-                            buf1[y][x].foreground.blue,
-                            //
-                            buf1[y][x].background.red,
-                            buf1[y][x].background.green,
-                            buf1[y][x].background.blue,
-                            //
-                            buf1[y][x].value,
-                        });
+                        applyPixel(.{ .x = x, .y = y });
                     }
                 }
             }

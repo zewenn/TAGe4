@@ -7,7 +7,7 @@ const e = @import("./engine/engine.zig").TAGe4;
 const Vec2 = e.Vec2;
 
 var pos = Vec2(f64).init(0, 5);
-var rnd = std.Random.DefaultPrng.init(100);
+var rnd = std.Random.DefaultPrng.init(50);
 
 // const assets = @import(".temp/assets.zig");
 
@@ -62,16 +62,16 @@ pub fn main() !void {
         Screen.clearBuffer();
 
         if (Inputter.getKey(KeyCodes.A)) {
-            pos.x -= 100 * e.Time.delta;
+            pos.x -= 50 * e.Time.delta;
         }
         if (Inputter.getKey(KeyCodes.D)) {
-            pos.x += 100 * e.Time.delta;
+            pos.x += 50 * e.Time.delta;
         }
         if (Inputter.getKey(KeyCodes.W)) {
-            pos.y -= 100 * e.Time.delta;
+            pos.y -= 50 * e.Time.delta;
         }
         if (Inputter.getKey(KeyCodes.S)) {
-            pos.y += 100 * e.Time.delta;
+            pos.y += 50 * e.Time.delta;
         }
 
         if (Inputter.getKey(KeyCodes.ESCAPE)) {
