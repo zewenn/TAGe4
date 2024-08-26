@@ -698,7 +698,6 @@ pub inline fn getInputter(settings: Setting(Inputter)) OSNotSupportedError!Input
     };
 }
 
-// TODO: Make an interface for keycodes!!!
 pub inline fn getKeyCodes(settings: Setting(KeyCodes)) OSNotSupportedError!KeyCodes {
     if (settings.override_correct) return @constCast(&settings).use();
 
