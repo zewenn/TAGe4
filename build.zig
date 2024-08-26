@@ -15,10 +15,8 @@ pub fn build(b: *std.Build) void {
 
     // Image processing and sprite loading
     const zstbi = b.dependency("zstbi", .{});
-    {
-        exe.root_module.addImport("zstbi", zstbi.module("root"));
-        exe.linkLibrary(zstbi.artifact("zstbi"));
-    }
+    exe.root_module.addImport("zstbi", zstbi.module("root"));
+    exe.linkLibrary(zstbi.artifact("zstbi"));
 
     // Linking platrofm specific frameworks
     switch (@import("builtin").os.tag) {
@@ -36,15 +34,24 @@ pub fn build(b: *std.Build) void {
 
     // Automatic file "import"
     {
+        var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+        defer _ = gpa.deinit();
+
+        var allocator = gpa.allocator();
+
         const files_dir = "./src/assets/";
         const output_file = std.fs.cwd().createFile("src/.temp/filenames.zig", .{}) catch unreachable;
 
-        const seg = generateFileNames(files_dir);
+        const seg = generateFileNames(files_dir, &allocator);
         defer {
+            for (seg.list.items) |item| {
+                seg.alloc.free(item);
+            }
             seg.list.deinit();
         }
 
         var writer = output_file.writer();
+        writer.writeAll("") catch unreachable;
         _ = writer.write("pub const Filenames = [_][]const u8{\n") catch unreachable;
         for (seg.list.items, 0..seg.list.items.len) |item, i| {
             if (i == 0) {
@@ -88,22 +95,27 @@ const Segment = struct {
     list: std.ArrayListAligned([]const u8, null),
 };
 
-fn generateFileNames(files_dir: []const u8) Segment {
-    const dir = std.fs.cwd().openDir(files_dir, .{ .iterate = true }) catch unreachable;
-    defer @constCast(&dir).close();
-    
-    var result = std.ArrayList([]const u8).init(std.heap.page_allocator);
-    // defer result.deinit();
+fn generateFileNames(files_dir: []const u8, alloc: *Allocator) Segment {
+    var dir = std.fs.cwd().openDir(files_dir, .{ .iterate = true }) catch unreachable;
+    defer dir.close();
+
+    var result = std.ArrayList([]const u8).init(alloc.*);
 
     var it = dir.iterate();
-    while (it.next() catch unreachable) |entry| {
-        if (entry.kind == .file) {
-            result.append(entry.name) catch unreachable;
+    while (it.next() catch unreachable) |*entry| {
+        const copied = alloc.*.alloc(u8, entry.name.len) catch unreachable;
+
+        for (copied, entry.name) |*l, l2| {
+            l.* = l2;
+        }
+
+        if (entry.*.kind == .file) {
+            result.append(copied) catch unreachable;
         }
     }
 
     return Segment{
-        .alloc = std.heap.page_allocator,
+        .alloc = alloc.*,
         .list = result,
     };
 }
