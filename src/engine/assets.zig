@@ -1,7 +1,7 @@
 const std = @import("std");
 const zstbi = @import("zstbi");
 const Allocator = @import("std").mem.Allocator;
-const r = @import("./renderer.zig");
+const r = @import("./rendering/renderer.zig").r;
 const v = @import("./vectors.zig");
 const z = @import("./z.zig");
 

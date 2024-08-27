@@ -1,126 +1,23 @@
 const std = @import("std");
-const v = @import("./vectors.zig");
-const assert = @import("./z.zig").assert;
+const v = @import("../vectors.zig");
+const assert = @import("../z.zig").assert;
+
+// ====================================================
+
 const Allocator = @import("std").mem.Allocator;
+const Cell = @import("./Cell.zig");
+const Sprite = @import("./Sprite.zig");
 pub const Point = v.Vec2(f64);
 pub const ScreenPoint = v.Vec2(i64);
 
-pub const Colour = struct {
-    const Self = @This();
-    red: u8,
-    green: u8,
-    blue: u8,
+// ====================================================
 
-    pub fn eql(col1: *Self, col2: Self) bool {
-        if (col1.red != col2.red) return false;
-        if (col1.green != col2.green) return false;
-        if (col1.blue != col2.blue) return false;
-
-        return true;
-    }
+pub const r = struct {
+    pub const Cell: type = @import("Cell.zig");
+    pub const Sprite: type = @import("Sprite.zig");
 };
 
-pub const Cell = struct {
-    const Self = @This();
-    value: u8 = ' ',
-    foreground: Colour = Colour{ .red = 255, .green = 255, .blue = 255 },
-    background: Colour = Colour{ .red = 0, .green = 0, .blue = 0 },
-
-    pub fn eql(cell1: *Self, cell2: Self) bool {
-        if (cell1.value != cell2.value) return false;
-        if (!cell1.foreground.eql(cell2.foreground)) return false;
-        if (!cell1.background.eql(cell2.background)) return false;
-
-        return true;
-    }
-};
-
-pub const Sprite = struct {
-    const Self = @This();
-
-    grid: v.HeapMatrix(Cell),
-    width: usize,
-    height: usize,
-    alloc: *Allocator,
-
-    pub fn init(
-        allocator: *Allocator,
-        width: usize,
-        height: usize,
-    ) Self {
-        const _grid = allocator.alloc([]Cell, height) catch unreachable;
-        for (_grid) |*row| {
-            row.* = allocator.alloc(Cell, width) catch unreachable;
-        }
-
-        return Self{ .width = width, .height = height, .alloc = allocator, .grid = _grid };
-    }
-
-    pub fn deinit(self: *Self) void {
-        for (self.grid) |*row| {
-            self.alloc.free(row.*);
-        }
-        self.alloc.free(self.grid);
-    }
-
-    const PopulationError = error{SizeMismatch};
-
-    pub fn populate(self: *Self, comptime w: usize, comptime h: usize, comptime grid: v.Matrix2(Cell, w, h)) void {
-        for (grid, 0..h) |row, y| {
-            for (row, 0..w) |col, x| {
-                self.grid[y][x] = col;
-            }
-        }
-    }
-
-    pub fn isInBounds(self: *Self, at: Point, max: Point) bool {
-        var _at: *Point = @constCast(&at);
-        var _at_end_x: Point = _at.add(.{
-            .x = @floatFromInt(self.width),
-            .y = 0,
-        });
-        var _at_end_y: Point = _at.add(.{
-            .x = 0,
-            .y = @floatFromInt(self.height),
-        });
-        var _at_end_xy: Point = _at.add(.{
-            .x = @floatFromInt(self.width),
-            .y = @floatFromInt(self.height),
-        });
-
-        const res = (_at.isInBounds(
-            0,
-            max.x - @as(f64, 1),
-            0,
-            max.y - @as(f64, 1),
-        ) or
-            _at_end_x.isInBounds(
-            0,
-            max.x - @as(f64, 1),
-            0,
-            max.y - @as(f64, 1),
-        ) or
-            _at_end_y.isInBounds(
-            0,
-            max.x - @as(f64, 1),
-            0,
-            max.y - @as(f64, 1),
-        ) or
-            _at_end_xy.isInBounds(
-            0,
-            max.x - @as(f64, 1),
-            0,
-            max.y - @as(f64, 1),
-        ));
-
-        // std.debug.print("{?} - {?} => {s}\n", .{ _at, _at_end_x, if (res) "true" else "false" });
-
-        return res;
-    }
-};
-
-// pub const ScreenBuffer: type = [30][120]u8;
-const DisplayOptions = struct {
+pub const DisplayOptions = struct {
     size: v.Vec2(u16) = v.Vec2(u16).init(120, 30),
 };
 
@@ -259,33 +156,18 @@ pub inline fn Display(comptime options: DisplayOptions) type {
             }
         }
 
-        fn applyPixel(at: v.Vec2(usize)) void {
-            const y = at.y;
-            const x = at.x;
-
-            Cursor.move(@intCast(x * 2), @intCast(y));
+        fn applyPixel(at: v.Vec2(usize), cell_data: Cell) void {
+            Cursor.move(@intCast(at.x), @intCast(at.y));
             print("\x1b[38;2;{d};{d};{d}m\x1b[48;2;{d};{d};{d}m{c}\x1b[0m", .{
-                buf1[y][x].foreground.red,
-                buf1[y][x].foreground.green,
-                buf1[y][x].foreground.blue,
+                cell_data.foreground.red,
+                cell_data.foreground.green,
+                cell_data.foreground.blue,
                 //
-                buf1[y][x].background.red,
-                buf1[y][x].background.green,
-                buf1[y][x].background.blue,
+                cell_data.background.red,
+                cell_data.background.green,
+                cell_data.background.blue,
                 //
-                buf1[y][x].value,
-            });
-            Cursor.move(@intCast(x * 2 + 1), @intCast(y));
-            print("\x1b[38;2;{d};{d};{d}m\x1b[48;2;{d};{d};{d}m{c}\x1b[0m", .{
-                buf1[y][x].foreground.red,
-                buf1[y][x].foreground.green,
-                buf1[y][x].foreground.blue,
-                //
-                buf1[y][x].background.red,
-                buf1[y][x].background.green,
-                buf1[y][x].background.blue,
-                //
-                buf1[y][x].value,
+                cell_data.value,
             });
         }
 
@@ -296,7 +178,8 @@ pub inline fn Display(comptime options: DisplayOptions) type {
                 for (0..buf1[0].len) |x| {
                     if (!buf1[y][x].eql(buf2[y][x])) {
                         buf1[y][x] = buf2[y][x];
-                        applyPixel(.{ .x = x, .y = y });
+                        applyPixel(.{ .x = x * 2, .y = y }, buf1[y][x]);
+                        applyPixel(.{ .x = x * 2 + 1, .y = y }, buf1[y][x]);
                     }
                 }
             }
