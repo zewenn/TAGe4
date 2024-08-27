@@ -31,16 +31,8 @@ pub fn main() !void {
 
     e.Time.start(60);
 
-    const KeyCodes = e.Input.getKeyCodes(.{}) catch {
-        std.debug.print("OS Not Supported", .{});
-        return;
-    };
-    const Inputter = e.Input.getInputter(.{}) catch {
-        std.debug.print("OS Not Supported", .{});
-        return;
-    };
-    Inputter.init(&allocator);
-    defer Inputter.deinit();
+    e.Input.init(&allocator);
+    defer e.Input.deinit();
 
     const Events = e.EventHandler(.{});
 
@@ -58,23 +50,23 @@ pub fn main() !void {
     try Events.on(.Update, testfn);
 
     while (true) {
-        Inputter.update();
+        e.Input.update();
         Screen.clearBuffer();
 
-        if (Inputter.getKey(KeyCodes.A)) {
+        if (e.Input.getKey(e.Input.keys.A)) {
             pos.x -= 50 * e.Time.delta;
         }
-        if (Inputter.getKey(KeyCodes.D)) {
+        if (e.Input.getKey(e.Input.keys.D)) {
             pos.x += 50 * e.Time.delta;
         }
-        if (Inputter.getKey(KeyCodes.W)) {
+        if (e.Input.getKey(e.Input.keys.W)) {
             pos.y -= 50 * e.Time.delta;
         }
-        if (Inputter.getKey(KeyCodes.S)) {
+        if (e.Input.getKey(e.Input.keys.S)) {
             pos.y += 50 * e.Time.delta;
         }
 
-        if (Inputter.getKey(KeyCodes.ESCAPE)) {
+        if (e.Input.getKey(e.Input.keys.ESCAPE)) {
             break;
         }
 

@@ -5,10 +5,8 @@ pub const TAGe4 = struct {
     pub const Vec2 = @import("./vectors.zig").Vec2;
 
     // Input
-    pub const Input = struct {
-        pub const getInputter = @import("./input.zig").getInputter;
-        pub const getKeyCodes = @import("./input.zig").getKeyCodes;
-    };
+    pub const inputlib = @import("./input/generic.zig");
+    pub const Input = inputlib.getInputter(.{}) catch @panic("OS not supported!");
 
     // Rendering
     pub const Display = @import("./renderer.zig").Display;
