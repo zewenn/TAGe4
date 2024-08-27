@@ -6,6 +6,11 @@ pub fn assert(statement: bool, comptime msg: []const u8) void {
     }
 }
 
+pub fn panic(msg: anytype) noreturn {
+    std.debug.print("{any}", .{msg});
+    unreachable;
+}
+
 pub const math = struct {
     pub const CastError = error{CastError};
 
