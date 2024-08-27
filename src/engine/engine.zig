@@ -16,5 +16,5 @@ pub const TAGe4 = struct {
     pub const Cell = @import("./rendering/Cell.zig");
 
     pub const Time = @import("./time.zig").time;
-    pub const Assets = @import("./assets.zig").assets;
+    pub const Assets = @import("./assets.zig");
 };

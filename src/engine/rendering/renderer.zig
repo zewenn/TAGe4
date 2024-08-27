@@ -1,6 +1,7 @@
 const std = @import("std");
 const v = @import("../vectors.zig");
-const assert = @import("../z.zig").assert;
+const assert = @import("../z/z.zig").assert;
+const z = @import("../z/z.zig");
 
 // ====================================================
 
@@ -16,6 +17,25 @@ pub const r = struct {
     pub const Cell: type = @import("Cell.zig");
     pub const Sprite: type = @import("Sprite.zig");
 };
+
+pub const light_levels = z.arrays.Array(u8, 16, [_]u8{
+    ' ',
+    '.',
+    ',',
+    ':',
+    ';',
+    '-',
+    '~',
+    '=',
+    '+',
+    '*',
+    '#',
+    '%',
+    '&',
+    '@',
+    'B',
+    'M',
+});
 
 pub const DisplayOptions = struct {
     size: v.Vec2(u16) = v.Vec2(u16).init(120, 30),

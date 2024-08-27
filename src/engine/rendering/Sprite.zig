@@ -1,6 +1,6 @@
 const std = @import("std");
 const v = @import("../vectors.zig");
-const assert = @import("../z.zig").assert;
+const assert = @import("../z/z.zig").assert;
 
 // ====================================================
 
