@@ -56,13 +56,9 @@ pub const assets = struct {
     }
 
     pub fn getPixelBrightness(comptime len: u8, _lightmap: [len]u8, op: u8) !u8 {
-        var value = try std.math.divTrunc(
-            f128,
-            z.math.to_f128(op),
-            z.math.to_f128(_lightmap.len),
-        );
-        value = z.math.min(255, value);
-        value = z.math.max(0, value);
+        var value = z.math.div(op, _lightmap.len).?;
+        value = z.math.min(255, value).?;
+        value = z.math.max(0, value).?;
 
         const uval = z.math.f128_to(u8, value);
         if (uval == null) return _lightmap[lightmap.len - 1];
