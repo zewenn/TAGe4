@@ -31,16 +31,8 @@ pub fn main() !void {
 
     e.Time.start(60);
 
-    const KeyCodes = e.Input.getKeyCodes(.{}) catch {
-        std.debug.print("OS Not Supported", .{});
-        return;
-    };
-    const Inputter = e.Input.getInputter(.{}) catch {
-        std.debug.print("OS Not Supported", .{});
-        return;
-    };
-    Inputter.init(&allocator);
-    defer Inputter.deinit();
+    e.Input.init(&allocator);
+    defer e.Input.deinit();
 
     const Events = e.EventHandler(.{});
 
@@ -54,32 +46,34 @@ pub fn main() !void {
     Screen.Cursor.hide();
 
     const sprite = e.Assets.get("player_left_0.png").?;
+    const rainbow = e.Assets.get("rainbow.png").?;
 
     try Events.on(.Update, testfn);
 
     while (true) {
-        Inputter.update();
+        e.Input.update();
         Screen.clearBuffer();
 
-        if (Inputter.getKey(KeyCodes.A)) {
+        if (e.Input.getKey(e.Input.keys.A)) {
             pos.x -= 50 * e.Time.delta;
         }
-        if (Inputter.getKey(KeyCodes.D)) {
+        if (e.Input.getKey(e.Input.keys.D)) {
             pos.x += 50 * e.Time.delta;
         }
-        if (Inputter.getKey(KeyCodes.W)) {
+        if (e.Input.getKey(e.Input.keys.W)) {
             pos.y -= 50 * e.Time.delta;
         }
-        if (Inputter.getKey(KeyCodes.S)) {
+        if (e.Input.getKey(e.Input.keys.S)) {
             pos.y += 50 * e.Time.delta;
         }
 
-        if (Inputter.getKey(KeyCodes.ESCAPE)) {
+        if (e.Input.getKey(e.Input.keys.ESCAPE)) {
             break;
         }
 
         // assets.player_left_0.render(pos);
         // assets.player_left_0.render(pos.add(Vec2(f64).init(5, 5)));
+        Screen.blit(e.Point.init(0, 0), rainbow);
         Screen.blit(pos, sprite);
 
         try Events.call(.Update);
