@@ -63,3 +63,15 @@ pub fn max(value1: anytype, value2: anytype) ?f128 {
     }
     return v1;
 }
+
+pub fn avg(value1: anytype, value2: anytype) ?f128 {
+    const _v1 = to_f128(value1);
+    const _v2 = to_f128(value2);
+
+    if (_v1 == null or _v2 == null) return null;
+
+    const v1 = _v1.?;
+    const v2 = _v2.?;
+
+    return (v1 + v2) / 2;
+}

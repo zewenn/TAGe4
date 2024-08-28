@@ -46,6 +46,7 @@ pub fn main() !void {
     Screen.Cursor.hide();
 
     const sprite = e.Assets.get("player_left_0.png").?;
+    const rainbow = e.Assets.get("rainbow.png").?;
 
     try Events.on(.Update, testfn);
 
@@ -72,6 +73,7 @@ pub fn main() !void {
 
         // assets.player_left_0.render(pos);
         // assets.player_left_0.render(pos.add(Vec2(f64).init(5, 5)));
+        Screen.blit(e.Point.init(0, 0), rainbow);
         Screen.blit(pos, sprite);
 
         try Events.call(.Update);

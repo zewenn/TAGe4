@@ -46,7 +46,6 @@ pub inline fn Display(comptime options: DisplayOptions) type {
 
     return struct {
         var original_buffer: CellBuffer = [_][120]Cell{[_]Cell{Cell{}} ** 120} ** 30;
-        // var buf1: ScreenBuffer = [_][120]u8{[_]u8{' '} ** 120} ** 30;
         var buf1: CellBuffer = undefined;
         var buf2: CellBuffer = undefined;
 
@@ -171,7 +170,14 @@ pub inline fn Display(comptime options: DisplayOptions) type {
                     const x: usize = @intCast(px);
                     const y: usize = @intCast(py);
 
-                    buf2[y][x] = _sprite.grid[dh][dw];
+                    var new_cell: Cell = _sprite.grid[dh][dw];
+
+                    if (new_cell.value == light_levels.at(0)) continue;
+                    if (light_levels.index(new_cell.value).? < light_levels.index(buf2[y][x].value).?) {
+                        new_cell.foreground = new_cell.foreground.blend(buf2[y][x].foreground);
+                    }
+
+                    buf2[y][x] = new_cell;
                 }
             }
         }
