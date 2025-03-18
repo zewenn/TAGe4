@@ -4,18 +4,18 @@ pub const CastError = error{CastError};
 
 pub fn to_f128(x: anytype) ?f128 {
     return switch (@typeInfo(@TypeOf(x))) {
-        .Int, .ComptimeInt => @as(f128, @floatFromInt(@as(i128, @intCast(x)))),
-        .Float, .ComptimeFloat => @as(f128, @floatCast(x)),
-        .Bool => @as(f128, @floatFromInt(@as(i128, @intFromBool(x)))),
+        .int, .comptime_int => @as(f128, @floatFromInt(@as(i128, @intCast(x)))),
+        .float, .comptime_float => @as(f128, @floatCast(x)),
+        .bool => @as(f128, @floatFromInt(@as(i128, @intFromBool(x)))),
         else => null,
     };
 }
 
 pub fn f128_to(comptime T: type, x: f128) ?T {
     return switch (@typeInfo(T)) {
-        .Int, .ComptimeInt => std.math.cast(T, @as(i128, @intFromFloat(x))),
-        .Float, .ComptimeFloat => @as(T, @floatCast(x)),
-        .Bool => if (x > 0) true else false,
+        .int, .comptime_int => std.math.cast(T, @as(i128, @intFromFloat(x))),
+        .float, .comptime_float => @as(T, @floatCast(x)),
+        .bool => if (x > 0) true else false,
         else => null,
     };
 }
